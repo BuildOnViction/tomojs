@@ -1,0 +1,51 @@
+sudo: required
+language: node_js
+node_js:
+  - "8"
+  - "10"
+  - "12"
+
+jobs:
+  include:
+    - stage: Lint
+      script: npm run lint
+    - stage: Audit
+      script: npm audit --production
+    - stage: Npm release
+      node_js: "10"
+      script:
+        - echo "Deploying to npm ..."
+      deploy:
+        provider: npm
+        email: $NPM_EMAIL
+        api_key: $NPM_API_KEY
+        on:
+          tags: true
+
+    - stage: Github release
+      before_install:
+        - npm install -g nexe@3.3.2
+      script:
+        - nexe -i posv -t linux-x64 -o posv.$TRAVIS_TAG.linux-x64 -r ./
+        - nexe -i posv -t darwin-x64 -o posv.$TRAVIS_TAG.darwin-x64 -r ./
+        - nexe -i posv -t win32-x64-6.11.2 -o posv.$TRAVIS_TAG.win-x64.exe -r ./
+      deploy:
+        provider: releases
+        api_key: $GH_TOKEN
+        skip_cleanup: true
+        overwrite: true
+        file:
+          - posv.$TRAVIS_TAG.linux-x64
+          - posv.$TRAVIS_TAG.win-x64.exe
+          - posv.$TRAVIS_TAG.darwin-x64
+        on:
+          tags: true
+
+stages:
+  - name: Lint
+  - name: Audit
+  - name: Test
+  - name: Npm release
+    if: type != pull_request AND branch =~ ^v AND tag IS present AND repo = tomochain/posvjs
+  - name: Github release
+    if: type != pull_request AND branch =~ ^v AND tag IS present AND repo = tomochain/posvjs

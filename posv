@@ -1,0 +1,92 @@
+#!/usr/bin/env node
+
+const commander = require('commander')
+const TomoXJS = require('./index')
+const pjson = require('./package.json')
+const { prompt } = require('inquirer')
+const fs = require('fs')
+const path = require('path')
+const os = require('os')
+const ethers = require('ethers')
+
+let configPath = path.resolve(process.cwd(), '.env')
+if (fs.existsSync(path.resolve(require('os').homedir(), '.posv'))) {
+    configPath = path.resolve(require('os').homedir(), '.posv')
+}
+
+require('dotenv').config({ path: configPath })
+
+if ((process.argv.indexOf('--help') < 0) && (process.argv.indexOf('init') < 0)
+    && (process.argv.indexOf('config') < 0)) {
+    if (!process.env.ENDPOINT || !process.env.STAKER_PKEY) {
+        console.log('Run `posv init` to setup environment')
+        process.exit(1)
+    }
+}
+
+const tomox = new TomoXJS(
+    process.env.ENDPOINT,
+    process.env.STAKER_PKEY)
+
+commander
+    .version(pjson.version)
+    .description('TomoChain POSV CLI')
+
+commander
+    .command('init')
+    .action(async (params) => {
+        const questions = [{
+            type : 'password',
+            name : 'stakerPKey',
+            message : 'Enter staker private key (default: Random)...'
+        }, {
+            type : 'input',
+            name : 'endpoint',
+            message : 'Enter RPC endpoint (default: http://locahost:8545)...',
+            default: 'http://localhost:8545'
+
+        }]
+        prompt(questions).then( answers => {
+            let tomoxjsPath = path.resolve(require('os').homedir(), '.posv')
+            let address = ''
+            if (!answers.stakerPKey) {
+                let randomWallet = ethers.Wallet.createRandom()
+                answers.stakerPKey = randomWallet.privateKey
+                address = randomWallet.address
+            } else {
+                let wallet = new ethers.Wallet(answers.stakerPKey)
+                address = wallet.address
+            }
+            fs.writeFile(tomoxjsPath, `ENDPOINT=${answers.endpoint}\nSTAKER_PKEY=${answers.stakerPKey}\nSTAKER_ADDR=${address}\n`, function (err) {
+                if (err) throw err;
+                console.log('Saved!');
+            });
+        })
+    })
+
+commander
+    .command('config')
+    .action(() => {
+        console.log(`
+        configPath: ${configPath}
+        ENDPOINT: ${process.env.ENDPOINT}
+        STAKER_ADDR: ${process.env.STAKER_ADDR}
+        STAKER_PKEY: ******
+        `)
+    })
+
+commander
+    .command('stake')
+    .requiredOption('-a, --amount <amount>', 'amount (TOMO)')
+    .requiredOption('-s, --node <node>', 'node coinbase address')
+    .action(async (params) => {
+        await tomox.stake({
+                amount: params.amount,
+                node: params.node
+        }).then(data => {
+            console.log(data)
+        }).catch(e => console.log(e))
+    })
+
+
+commander.parse(process.argv)
