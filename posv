@@ -88,5 +88,73 @@ commander
         }).catch(e => console.log(e))
     })
 
+commander
+    .command('unstake')
+    .requiredOption('-a, --amount <amount>', 'amount (TOMO)')
+    .requiredOption('-s, --node <node>', 'node coinbase address')
+    .action(async (params) => {
+        await posv.unstake({
+                amount: params.amount,
+                node: params.node
+        }).then(data => {
+            console.log(data)
+        }).catch(e => console.log(e))
+    })
+
+commander
+    .command('propose')
+    .requiredOption('-a, --amount <amount>', 'amount (TOMO)')
+    .requiredOption('-s, --node <node>', 'node coinbase address')
+    .action(async (params) => {
+        await posv.propose({
+                amount: params.amount,
+                node: params.node
+        }).then(data => {
+            console.log(data)
+        }).catch(e => console.log(e))
+    })
+
+commander
+    .command('resign')
+    .requiredOption('-s, --node <node>', 'node coinbase address')
+    .action(async (params) => {
+        await posv.resign({
+                node: params.node
+        }).then(data => {
+            console.log(data)
+        }).catch(e => console.log(e))
+    })
+
+commander
+    .command('getWithdrawBlockNumbers')
+    .action(async (params) => {
+        await posv.getWithdrawBlockNumbers()
+        .then(data => {
+            console.log(data)
+        }).catch(e => console.log(e))
+    })
+
+commander
+    .command('withdraw')
+    .requiredOption('-b, --blockNumber <blockNumber>', 'Block number')
+    .requiredOption('-i, --index <index>', 'Block number index')
+    .action(async (params) => {
+        await posv.withdraw({
+                blockNumber: params.blockNumber,
+                index: params.index
+        }).then(data => {
+            console.log(data)
+        }).catch(e => console.log(e))
+    })
+
+commander
+    .command('withdrawAll')
+    .action(async (params) => {
+        await posv.withdrawAll()
+        .then(data => {
+            console.log(data)
+        }).catch(e => console.log(e))
+    })
+
 
 commander.parse(process.argv)
