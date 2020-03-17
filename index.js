@@ -32,21 +32,21 @@ class POSVJS {
 
     async stake ({ amount, node }) {
         try {
-			const voteAmountBN = new BigNumber(amount).multipliedBy(10 ** 18).toString(10)
+            const voteAmountBN = new BigNumber(amount).multipliedBy(10 ** 18).toString(10)
             const gasPrice = await this.provider.getGasPrice()
 
-			let txParams = {
-				value: ethers.utils.hexlify(ethers.utils.bigNumberify(voteAmountBN)),
-				gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(gasPrice)),
-				gasLimit: ethers.utils.hexlify(2000000),
-				chainId: this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89
-			}
+            let txParams = {
+                value: ethers.utils.hexlify(ethers.utils.bigNumberify(voteAmountBN)),
+                gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(gasPrice)),
+                gasLimit: ethers.utils.hexlify(2000000),
+                chainId: this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89
+            }
 
-			const result = await this.contract.functions.vote(node, txParams)
-			return result
-		} catch (error) {
-			throw error
-		}
+            const result = await this.contract.functions.vote(node, txParams)
+            return result
+        } catch (error) {
+            throw error
+        }
     }
 
     async unstake ({ amount, node }) {
@@ -127,10 +127,10 @@ class POSVJS {
         try {
             const gasPrice = await this.provider.getGasPrice()
 
-			let txParams = {
-				gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(gasPrice)),
-				gasLimit: ethers.utils.hexlify(2000000),
-				chainId: this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89
+            let txParams = {
+                gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(gasPrice)),
+                gasLimit: ethers.utils.hexlify(2000000),
+                chainId: this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89
             }
             const result = await this.contract.functions.withdraw(blockNumber, index, txParams)
             return result
@@ -157,10 +157,10 @@ class POSVJS {
             }))
             const gasPrice = await this.provider.getGasPrice()
 
-			let txParams = {
-				gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(gasPrice)),
-				gasLimit: ethers.utils.hexlify(2000000),
-				chainId: this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89
+            let txParams = {
+                gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(gasPrice)),
+                gasLimit: ethers.utils.hexlify(2000000),
+                chainId: this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89
             }
 
             const withdraw = await Promise.all(result.map(async r => {
