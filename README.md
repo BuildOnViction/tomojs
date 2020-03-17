@@ -25,7 +25,25 @@ Or:
 cp .env.example .env
 ```
 
-### Stake
-### UnStake
-### Resign
-### Withdraw
+Help:
+```
+./posv --help
+Usage: posv [options] [command]
+
+TomoChain POSV CLI
+
+Options:
+  -V, --version            output the version number
+  -h, --help               output usage information
+
+Commands:
+  init [options]           setup/init environment
+  info                     show environment
+  stake [options]          stake TOMO to a masternode candidate
+  unstake [options]        unstake TOMO from a masternode candidate
+  propose [options]        propose a new masternode candidate
+  resign [options]         resign a masternode candidate
+  getWithdrawBlockNumbers  show blocknumbers to withdraw TOMO after unstake/resign
+  withdraw [options]       withdraw TOMO with specify Blocknumber after unstake/resign
+  withdrawAll              withdraw all available TOMO after unstake/resign
+```

@@ -86,6 +86,7 @@ commander
 
 commander
     .command('info')
+    .description('show environment')
     .action(() => {
         console.log(`
         configPath: ${configPath}
@@ -97,6 +98,7 @@ commander
 
 commander
     .command('stake')
+    .description('stake TOMO to a masternode candidate')
     .requiredOption('-a, --amount <amount>', 'amount (TOMO)')
     .requiredOption('-s, --node <node>', 'node coinbase address')
     .action(async (params) => {
@@ -110,6 +112,7 @@ commander
 
 commander
     .command('unstake')
+    .description('unstake TOMO from a masternode candidate')
     .requiredOption('-a, --amount <amount>', 'amount (TOMO)')
     .requiredOption('-s, --node <node>', 'node coinbase address')
     .action(async (params) => {
@@ -123,6 +126,7 @@ commander
 
 commander
     .command('propose')
+    .description('propose a new masternode candidate')
     .requiredOption('-a, --amount <amount>', 'amount (TOMO)')
     .requiredOption('-s, --node <node>', 'node coinbase address')
     .action(async (params) => {
@@ -136,6 +140,7 @@ commander
 
 commander
     .command('resign')
+    .description('resign a masternode candidate')
     .requiredOption('-s, --node <node>', 'node coinbase address')
     .action(async (params) => {
         await posv.resign({
@@ -147,6 +152,7 @@ commander
 
 commander
     .command('getWithdrawBlockNumbers')
+    .description('show blocknumbers to withdraw TOMO after unstake/resign')
     .action(async (params) => {
         await posv.getWithdrawBlockNumbers()
         .then(data => {
@@ -156,6 +162,7 @@ commander
 
 commander
     .command('withdraw')
+    .description('withdraw TOMO with specify Blocknumber after unstake/resign')
     .requiredOption('-b, --blockNumber <blockNumber>', 'Block number')
     .requiredOption('-i, --index <index>', 'Block number index')
     .action(async (params) => {
@@ -169,6 +176,7 @@ commander
 
 commander
     .command('withdrawAll')
+    .description('withdraw all available TOMO after unstake/resign')
     .action(async (params) => {
         await posv.withdrawAll()
         .then(data => {
