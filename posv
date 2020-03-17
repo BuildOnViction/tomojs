@@ -18,7 +18,7 @@ require('dotenv').config({ path: configPath })
 
 if ((process.argv.indexOf('--help') < 0) && (process.argv.indexOf('init') < 0)
     && (process.argv.indexOf('config') < 0)) {
-    if (!process.env.ENDPOINT || !process.env.STAKER_PKEY) {
+    if (!process.env.ENDPOINT || !process.env.USER_PKEY) {
         console.log('Run `posv init` to setup environment')
         process.exit(1)
     }
@@ -26,7 +26,7 @@ if ((process.argv.indexOf('--help') < 0) && (process.argv.indexOf('init') < 0)
 
 const posv = new POSVJS(
     process.env.ENDPOINT,
-    process.env.STAKER_PKEY)
+    process.env.USER_PKEY)
 
 commander
     .version(pjson.version)
@@ -34,44 +34,64 @@ commander
 
 commander
     .command('init')
+    .description('setup/init environment')
+    .option('-p, --password <password>', 'password', '')
+    .option('-k, --keystore <keystore>', 'path to keystore file', '')
     .action(async (params) => {
         const questions = [{
-            type : 'password',
-            name : 'stakerPKey',
-            message : 'Enter staker private key (default: Random)...'
-        }, {
             type : 'input',
             name : 'endpoint',
             message : 'Enter RPC endpoint (default: http://locahost:8545)...',
             default: 'http://localhost:8545'
 
         }]
-        prompt(questions).then( answers => {
-            let posvPath = path.resolve(require('os').homedir(), '.posv')
-            let address = ''
-            if (!answers.stakerPKey) {
-                let randomWallet = ethers.Wallet.createRandom()
-                answers.stakerPKey = randomWallet.privateKey
-                address = randomWallet.address
-            } else {
-                let wallet = new ethers.Wallet(answers.stakerPKey)
-                address = wallet.address
+        if (!params.keystore) {
+            questions.push({
+                type : 'password',
+                name : 'traderPKey',
+                message : 'Enter trader private key (default: Random)...'
+            })
+        }
+        prompt(questions).then(async answers => {
+            try {
+                let posvPath = path.resolve(require('os').homedir(), '.posv')
+                let address = ''
+
+                if (params.keystore) {
+                    let keydata = fs.readFileSync(params.keystore);
+                    let json = JSON.parse(keydata);
+                    let wallet = await ethers.Wallet.fromEncryptedJson(JSON.stringify(json), params.password)
+                    answers.userPKey = wallet.privateKey
+                    address = wallet.address
+                }
+
+                if (!answers.userPKey) {
+                    let randomWallet = ethers.Wallet.createRandom()
+                    answers.userPKey = randomWallet.privateKey
+                    address = randomWallet.address
+                } else {
+                    let wallet = new ethers.Wallet(answers.userPKey)
+                    address = wallet.address
+                }
+                fs.writeFile(posvPath, `ENDPOINT=${answers.endpoint}\nUSER_PKEY=${answers.userPKey}\nUSER_ADDR=${address}\n`, function (err) {
+                    if (err) throw err;
+                    console.log('Address:', address);
+                    console.log('Saved!');
+                })
+            } catch(e) {
+                console.log(e)
             }
-            fs.writeFile(posvPath, `ENDPOINT=${answers.endpoint}\nSTAKER_PKEY=${answers.stakerPKey}\nSTAKER_ADDR=${address}\n`, function (err) {
-                if (err) throw err;
-                console.log('Saved!');
-            });
         })
     })
 
 commander
-    .command('config')
+    .command('info')
     .action(() => {
         console.log(`
         configPath: ${configPath}
         ENDPOINT: ${process.env.ENDPOINT}
-        STAKER_ADDR: ${process.env.STAKER_ADDR}
-        STAKER_PKEY: ******
+        USER_ADDR: ${process.env.USER_ADDR}
+        USER_PKEY: ******
         `)
     })
 
