@@ -1,8 +1,6 @@
 
 ## Install
-It requires NodeJS 8+.
-
-Easy to install the package with command:
+Easy to install the package with command (It requires NodeJS 8+):
 ```
 npm install --save tomojs
 ```
