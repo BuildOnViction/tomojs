@@ -183,6 +183,46 @@ class POSVJS {
         let balance = await this.provider.getBalance(address || this.coinbase)
         return ethers.utils.formatEther(balance)
     }
+
+    getCandidateStatus({address, epoch}) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = { 
+                    jsonrpc: '2.0',
+                    method: 'eth_getCandidateStatus',
+                    params: [ address, epoch || 'latest' ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    let ret = body.result || {}
+                    ret.capacity = new BigNumber(ret.capacity).dividedBy(1e+18).toString(10)
+                    return resolve(ret)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
 }
 
 module.exports = POSVJS

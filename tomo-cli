@@ -244,4 +244,16 @@ commander
         }).catch(e => console.log(e.message ? e.message : e))
     })
 
+commander
+    .command('getCandidateStatus')
+    .description('get candidate status')
+    .option('-a, --address <address>', 'Candidate Coinbase')
+    .option('-e, --epoch <epoch>', 'Epoch Number')
+    .action(async (params) => {
+        await tomojs.getCandidateStatus(params)
+        .then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
+
 commander.parse(process.argv)
