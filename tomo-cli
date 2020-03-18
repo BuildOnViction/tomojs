@@ -26,7 +26,9 @@ if ((process.argv.indexOf('--help') < 0) && (process.argv.indexOf('init') < 0)
 
 const tomojs = new TomoJS(
     process.env.ENDPOINT,
-    process.env.USER_PKEY)
+    process.env.USER_PKEY,
+    process.env.CHAIN_ID || 88
+)
 
 commander
     .version(pjson.version)
@@ -41,8 +43,13 @@ commander
         const questions = [{
             type : 'input',
             name : 'endpoint',
-            message : 'Enter RPC or IPC endpoint (default: http://locahost:8545)...',
-            default: 'http://localhost:8545'
+            message : 'Enter RPC or IPC endpoint...',
+            default: 'https://rpc.tomochain.com'
+        }, {
+            type : 'input',
+            name : 'chainId',
+            message : 'Enter chain Id...',
+            default: '88'
         }]
         if (!params.keystore) {
             questions.push({
@@ -72,7 +79,7 @@ commander
                     let wallet = new ethers.Wallet(answers.userPKey)
                     address = wallet.address
                 }
-                fs.writeFile(tomojsPath, `ENDPOINT=${answers.endpoint}\nUSER_PKEY=${answers.userPKey}\nUSER_ADDR=${address}\n`, function (err) {
+                fs.writeFile(tomojsPath, `ENDPOINT=${answers.endpoint}\nUSER_PKEY=${answers.userPKey}\nUSER_ADDR=${address}\nCHAIN_ID=${answers.chainId || 88}\n`, function (err) {
                     if (err) throw err;
                     console.log('Address:', address);
                     console.log('Saved!');

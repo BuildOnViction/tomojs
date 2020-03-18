@@ -11,7 +11,8 @@ const validatorAddress = '0x0000000000000000000000000000000000000088'
 class POSVJS {
     constructor (
         endpoint = 'http://localhost:8545',
-        pkey = '' // sample
+        pkey = '', // sample
+        chainId = 88
     ) {
         this.endpoint = endpoint
         if (!pkey) {
@@ -44,7 +45,7 @@ class POSVJS {
                 value: ethers.utils.hexlify(ethers.utils.bigNumberify(voteAmountBN)),
                 gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(gasPrice)),
                 gasLimit: ethers.utils.hexlify(2000000),
-                chainId: this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89
+                chainId: this.chainId
             }
 
             const result = await this.contract.functions.vote(node, txParams)
