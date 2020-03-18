@@ -29,7 +29,7 @@ cp .env.example .env
 Help:
 ```
 ./tomo-cli --help
-Usage: posv [options] [command]
+Usage: tomo-cli [options] [command]
 
 TomoChain CLI
 
