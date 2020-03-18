@@ -184,7 +184,7 @@ class POSVJS {
         return ethers.utils.formatEther(balance)
     }
 
-    getCandidateStatus({address, epoch}) {
+    getCandidateStatus({ address, epoch }) {
         return new Promise(async (resolve, reject) => {
 
             try {
