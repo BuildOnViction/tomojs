@@ -223,6 +223,27 @@ class POSVJS {
             }
         })
     }
+
+    send({ address, value }) {
+        return new Promise(async (resolve, reject) => {
+			return this.wallet.getTransactionCount().then(count => {
+				let tx = {
+					nonce: count,
+					gasLimit: 21000,
+					gasPrice: ethers.utils.bigNumberify('250000000'),
+					to: address,
+					value: ethers.utils.parseEther(value),
+					data: '0x',
+					chainId: this.chainId
+				}
+                return this.wallet.sendTransaction(tx)
+			}).then(tx => {
+                return resolve(tx)
+            }).catch(e => {
+                return reject(e)
+            })
+        })
+    }
 }
 
 module.exports = POSVJS

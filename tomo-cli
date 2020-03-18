@@ -256,4 +256,16 @@ commander
         }).catch(e => console.log(e.message ? e.message : e))
     })
 
+commander
+    .command('send')
+    .description('send TOMO to another account')
+    .requiredOption('-a, --address <address>', 'Address Destionation')
+    .requiredOption('-v, --value <value>', 'Value')
+    .action(async (params) => {
+        await tomojs.send(params)
+        .then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
+
 commander.parse(process.argv)
