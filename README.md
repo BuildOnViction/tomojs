@@ -15,7 +15,7 @@ chmod +x tomo-cli && sudo mv tomo-cli /usr/local/bin/
 [Download Latest](https://github.com/tomochain/tomojs/releases/latest)
 
 ## Command Line
-You need to create `.env` file to setup `ENDPOINT` and `USER_PKEY` before using the tool.
+You need to init enviroment or create `.env` file to setup `ENDPOINT` and `USER_PKEY` before using the tool.
 
 ```
 ./tomo-cli init
