@@ -1,19 +1,26 @@
 {
-    "name": "posvjs",
-    "version": "0.1.0",
-    "description": "TomoChain POSV JS SDK",
+    "name": "tomojs",
+    "version": "0.2.0",
+    "description": "TomoChain JS SDK",
     "keywords": [
         "posv",
+        "tomox",
+        "tomop",
+        "tomoz",
+        "staking",
         "tomochain"
     ],
     "repository": {
         "type": "git",
-        "url": "https://github.com/tomochain/posvjs.git"
+        "url": "https://github.com/tomochain/tomojs.git"
     },
     "bugs": {
-        "url": "http://github.com/tomochain/posvjs/issues"
+        "url": "http://github.com/tomochain/tomojs/issues"
     },
     "main": "index.js",
+    "bin": {
+        "tomo-cli": "tomo-cli"
+    },
     "scripts": {
         "lint": "eslint --cache ./ --ext .js",
         "test": "echo \"Error: no test specified\" && exit 0"

@@ -4,20 +4,21 @@ It requires NodeJS 8+.
 
 Easy to install the package with command:
 ```
-npm install --save posvjs
+npm install --save tomojs
 ```
 
-Or you can use `posv` binary:
+Or you can use `tomo-cli` binary:
 ```
-cd /tmp && wget https://github.com/tomochain/posvjs/releases/download/[VERSION]/posv.[VERSION].linux-x64 -O posv
-chmod +x posv && sudo mv posv /usr/local/bin/
+cd /tmp && wget https://github.com/tomochain/tomojs/releases/download/[VERSION]/tomo-cli.[VERSION].linux-x64 -O tomo-cli
+chmod +x tomo-cli && sudo mv tomo-cli /usr/local/bin/
 ```
+[Download Latest](/releases/latest)
 
 ## Command Line
 You need to create `.env` file to setup `ENDPOINT` and `STAKER_PKEY` before using the tool.
 
 ```
-./posv init
+./tomo-cli init
 ```
 Or:
 
@@ -27,10 +28,10 @@ cp .env.example .env
 
 Help:
 ```
-./posv --help
+./tomo-cli --help
 Usage: posv [options] [command]
 
-TomoChain POSV CLI
+TomoChain CLI
 
 Options:
   -V, --version            output the version number

@@ -26,18 +26,18 @@ jobs:
       before_install:
         - npm install -g nexe@3.3.2
       script:
-        - nexe -i posv -t linux-x64 -o posv.$TRAVIS_TAG.linux-x64 -r ./
-        - nexe -i posv -t darwin-x64 -o posv.$TRAVIS_TAG.darwin-x64 -r ./
-        - nexe -i posv -t win32-x64-6.11.2 -o posv.$TRAVIS_TAG.win-x64.exe -r ./
+        - nexe -i tomo-cli -t linux-x64 -o tomo-cli.$TRAVIS_TAG.linux-x64 -r ./
+        - nexe -i tomo-cli -t darwin-x64 -o tomo-cli.$TRAVIS_TAG.darwin-x64 -r ./
+        - nexe -i tomo-cli -t win32-x64-6.11.2 -o tomo-cli.$TRAVIS_TAG.win-x64.exe -r ./
       deploy:
         provider: releases
         api_key: $GH_TOKEN
         skip_cleanup: true
         overwrite: true
         file:
-          - posv.$TRAVIS_TAG.linux-x64
-          - posv.$TRAVIS_TAG.win-x64.exe
-          - posv.$TRAVIS_TAG.darwin-x64
+          - tomo-cli.$TRAVIS_TAG.linux-x64
+          - tomo-cli.$TRAVIS_TAG.win-x64.exe
+          - tomo-cli.$TRAVIS_TAG.darwin-x64
         on:
           tags: true
 
@@ -46,6 +46,6 @@ stages:
   - name: Audit
   - name: Test
   - name: Npm release
-    if: type != pull_request AND branch =~ ^v AND tag IS present AND repo = tomochain/posvjs
+    if: type != pull_request AND branch =~ ^v AND tag IS present AND repo = tomochain/tomojs
   - name: Github release
-    if: type != pull_request AND branch =~ ^v AND tag IS present AND repo = tomochain/posvjs
+    if: type != pull_request AND branch =~ ^v AND tag IS present AND repo = tomochain/tomojs
