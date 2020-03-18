@@ -3,7 +3,7 @@
 const commander = require('commander')
 const POSVJS = require('./index')
 const pjson = require('./package.json')
-const { prompt } = require('inquirer')
+const { prompt, Separator } = require('inquirer')
 const fs = require('fs')
 const path = require('path')
 const os = require('os')
@@ -43,12 +43,11 @@ commander
             name : 'endpoint',
             message : 'Enter RPC endpoint (default: http://locahost:8545)...',
             default: 'http://localhost:8545'
-
         }]
         if (!params.keystore) {
             questions.push({
                 type : 'password',
-                name : 'traderPKey',
+                name : 'userPKey',
                 message : 'Enter trader private key (default: Random)...'
             })
         }
@@ -107,7 +106,7 @@ commander
                 node: params.node
         }).then(data => {
             console.log(data)
-        }).catch(e => console.log(e))
+        }).catch(e => console.log(e.message ? e.message : e))
     })
 
 commander
@@ -121,33 +120,76 @@ commander
                 node: params.node
         }).then(data => {
             console.log(data)
-        }).catch(e => console.log(e))
+        }).catch(e => console.log(e.message ? e.message : e))
     })
 
 commander
     .command('propose')
     .description('propose a new masternode candidate')
+    .option('-y, --yes', 'ignore question')
     .requiredOption('-a, --amount <amount>', 'amount (TOMO)')
     .requiredOption('-s, --node <node>', 'node coinbase address')
     .action(async (params) => {
-        await posv.propose({
+        const questions = [{
+            type : 'list',
+            name : 'answer',
+            message : 'This process cannot be undone. Do you want to continue?',
+            default: 'Yes',
+            choices: ['Yes', new Separator(), 'No']
+        }]
+
+        if (params.yes) {
+            await posv.propose({
                 amount: params.amount,
                 node: params.node
-        }).then(data => {
-            console.log(data)
-        }).catch(e => console.log(e))
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        } else {
+            prompt(questions).then(async answers => {
+                if (answers.answer === 'Yes') {
+                    await posv.propose({
+                        amount: params.amount,
+                        node: params.node
+                    }).then(data => {
+                        console.log(data)
+                    }).catch(e => console.log(e.message ? e.message : e))
+                }
+            })
+        }
     })
 
 commander
     .command('resign')
     .description('resign a masternode candidate')
+    .option('-y, --yes', 'ignore question')
     .requiredOption('-s, --node <node>', 'node coinbase address')
     .action(async (params) => {
-        await posv.resign({
+        const questions = [{
+            type : 'list',
+            name : 'answer',
+            message : 'This process cannot be undone and your staked TOMO will be locked 30 days. Do you want to continue?',
+            default: 'Yes',
+            choices: ['Yes', new Separator(), 'No']
+        }]
+
+        if (params.yes) {
+            await posv.resign({
                 node: params.node
-        }).then(data => {
-            console.log(data)
-        }).catch(e => console.log(e))
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        } else {
+            prompt(questions).then(async answers => {
+                if (answers.answer === 'Yes') {
+                    await posv.resign({
+                        node: params.node
+                    }).then(data => {
+                        console.log(data)
+                    }).catch(e => console.log(e.message ? e.message : e))
+                }
+            })
+        }
     })
 
 commander
@@ -157,7 +199,7 @@ commander
         await posv.getWithdrawBlockNumbers()
         .then(data => {
             console.log(data)
-        }).catch(e => console.log(e))
+        }).catch(e => console.log(e.message ? e.message : e))
     })
 
 commander
@@ -171,7 +213,7 @@ commander
                 index: params.index
         }).then(data => {
             console.log(data)
-        }).catch(e => console.log(e))
+        }).catch(e => console.log(e.message ? e.message : e))
     })
 
 commander
@@ -181,8 +223,7 @@ commander
         await posv.withdrawAll()
         .then(data => {
             console.log(data)
-        }).catch(e => console.log(e))
+        }).catch(e => console.log(e.message ? e.message : e))
     })
-
 
 commander.parse(process.argv)
