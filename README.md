@@ -12,7 +12,7 @@ Or you can use `tomo-cli` binary:
 cd /tmp && wget https://github.com/tomochain/tomojs/releases/download/[VERSION]/tomo-cli.[VERSION].linux-x64 -O tomo-cli
 chmod +x tomo-cli && sudo mv tomo-cli /usr/local/bin/
 ```
-[Download Latest](/releases/latest)
+[Download Latest](https://github.com/tomochain/tomojs/releases/latest)
 
 ## Command Line
 You need to create `.env` file to setup `ENDPOINT` and `USER_PKEY` before using the tool.
