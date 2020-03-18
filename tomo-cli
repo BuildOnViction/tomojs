@@ -48,7 +48,7 @@ commander
             questions.push({
                 type : 'password',
                 name : 'userPKey',
-                message : 'Enter trader private key (default: Random)...'
+                message : 'Enter user private key (default: generate random pkey)...'
             })
         }
         prompt(questions).then(async answers => {
