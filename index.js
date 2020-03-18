@@ -178,7 +178,7 @@ class POSVJS {
         }
     }
 
-    async getBalance ({address}) {
+    async getBalance ({ address }) {
         let balance = await this.provider.getBalance(address || this.coinbase)
         return ethers.utils.formatEther(balance)
     }
