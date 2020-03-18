@@ -1,8 +1,6 @@
 
 ## Install
-It requires NodeJS 8+.
-
-Easy to install the package with command:
+Easy to install the package with command (It requires NodeJS 8+):
 ```
 npm install --save tomojs
 ```
@@ -15,7 +13,7 @@ chmod +x tomo-cli && sudo mv tomo-cli /usr/local/bin/
 [Download Latest](https://github.com/tomochain/tomojs/releases/latest)
 
 ## Command Line
-You need to create `.env` file to setup `ENDPOINT` and `USER_PKEY` before using the tool.
+You need to init enviroment or create `.env` file to setup `ENDPOINT` and `USER_PKEY` before using the tool.
 
 ```
 ./tomo-cli init
@@ -29,7 +27,7 @@ cp .env.example .env
 Help:
 ```
 ./tomo-cli --help
-Usage: posv [options] [command]
+Usage: tomo-cli [options] [command]
 
 TomoChain CLI
 
