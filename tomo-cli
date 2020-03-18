@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const commander = require('commander')
-const POSVJS = require('./index')
+const TomoJS = require('./index')
 const pjson = require('./package.json')
 const { prompt, Separator } = require('inquirer')
 const fs = require('fs')
@@ -10,8 +10,8 @@ const os = require('os')
 const ethers = require('ethers')
 
 let configPath = path.resolve(process.cwd(), '.env')
-if (fs.existsSync(path.resolve(require('os').homedir(), '.posv'))) {
-    configPath = path.resolve(require('os').homedir(), '.posv')
+if (fs.existsSync(path.resolve(require('os').homedir(), '.tomojs'))) {
+    configPath = path.resolve(require('os').homedir(), '.tomojs')
 }
 
 require('dotenv').config({ path: configPath })
@@ -19,12 +19,12 @@ require('dotenv').config({ path: configPath })
 if ((process.argv.indexOf('--help') < 0) && (process.argv.indexOf('init') < 0)
     && (process.argv.indexOf('config') < 0)) {
     if (!process.env.ENDPOINT || !process.env.USER_PKEY) {
-        console.log('Run `posv init` to setup environment')
+        console.log('Run `tomo-cli init` to setup environment')
         process.exit(1)
     }
 }
 
-const posv = new POSVJS(
+const tomojs = new TomoJS(
     process.env.ENDPOINT,
     process.env.USER_PKEY)
 
@@ -36,12 +36,12 @@ commander
     .command('init')
     .description('setup/init environment')
     .option('-p, --password <password>', 'password', '')
-    .option('-k, --keystore <keystore>', 'path to keystore file', '')
+    .option('-k, --keystore <keystore>', 'path to keystore file')
     .action(async (params) => {
         const questions = [{
             type : 'input',
             name : 'endpoint',
-            message : 'Enter RPC endpoint (default: http://locahost:8545)...',
+            message : 'Enter RPC or IPC endpoint (default: http://locahost:8545)...',
             default: 'http://localhost:8545'
         }]
         if (!params.keystore) {
@@ -53,7 +53,7 @@ commander
         }
         prompt(questions).then(async answers => {
             try {
-                let posvPath = path.resolve(require('os').homedir(), '.posv')
+                let tomojsPath = path.resolve(require('os').homedir(), '.tomojs')
                 let address = ''
 
                 if (params.keystore) {
@@ -72,7 +72,7 @@ commander
                     let wallet = new ethers.Wallet(answers.userPKey)
                     address = wallet.address
                 }
-                fs.writeFile(posvPath, `ENDPOINT=${answers.endpoint}\nUSER_PKEY=${answers.userPKey}\nUSER_ADDR=${address}\n`, function (err) {
+                fs.writeFile(tomojsPath, `ENDPOINT=${answers.endpoint}\nUSER_PKEY=${answers.userPKey}\nUSER_ADDR=${address}\n`, function (err) {
                     if (err) throw err;
                     console.log('Address:', address);
                     console.log('Saved!');
@@ -101,7 +101,7 @@ commander
     .requiredOption('-a, --amount <amount>', 'amount (TOMO)')
     .requiredOption('-s, --node <node>', 'node coinbase address')
     .action(async (params) => {
-        await posv.stake({
+        await tomojs.stake({
                 amount: params.amount,
                 node: params.node
         }).then(data => {
@@ -115,7 +115,7 @@ commander
     .requiredOption('-a, --amount <amount>', 'amount (TOMO)')
     .requiredOption('-s, --node <node>', 'node coinbase address')
     .action(async (params) => {
-        await posv.unstake({
+        await tomojs.unstake({
                 amount: params.amount,
                 node: params.node
         }).then(data => {
@@ -139,7 +139,7 @@ commander
         }]
 
         if (params.yes) {
-            await posv.propose({
+            await tomojs.propose({
                 amount: params.amount,
                 node: params.node
             }).then(data => {
@@ -148,7 +148,7 @@ commander
         } else {
             prompt(questions).then(async answers => {
                 if (answers.answer === 'Yes') {
-                    await posv.propose({
+                    await tomojs.propose({
                         amount: params.amount,
                         node: params.node
                     }).then(data => {
@@ -174,7 +174,7 @@ commander
         }]
 
         if (params.yes) {
-            await posv.resign({
+            await tomojs.resign({
                 node: params.node
             }).then(data => {
                 console.log(data)
@@ -182,7 +182,7 @@ commander
         } else {
             prompt(questions).then(async answers => {
                 if (answers.answer === 'Yes') {
-                    await posv.resign({
+                    await tomojs.resign({
                         node: params.node
                     }).then(data => {
                         console.log(data)
@@ -196,7 +196,7 @@ commander
     .command('getWithdrawBlockNumbers')
     .description('show blocknumbers to withdraw TOMO after unstake/resign')
     .action(async (params) => {
-        await posv.getWithdrawBlockNumbers()
+        await tomojs.getWithdrawBlockNumbers()
         .then(data => {
             console.log(data)
         }).catch(e => console.log(e.message ? e.message : e))
@@ -208,7 +208,7 @@ commander
     .requiredOption('-b, --blockNumber <blockNumber>', 'Block number')
     .requiredOption('-i, --index <index>', 'Block number index')
     .action(async (params) => {
-        await posv.withdraw({
+        await tomojs.withdraw({
                 blockNumber: params.blockNumber,
                 index: params.index
         }).then(data => {
@@ -220,7 +220,18 @@ commander
     .command('withdrawAll')
     .description('withdraw all available TOMO after unstake/resign')
     .action(async (params) => {
-        await posv.withdrawAll()
+        await tomojs.withdrawAll()
+        .then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
+
+commander
+    .command('getBalance')
+    .description('get user balance')
+    .option('-a, --address <address>', 'User Address')
+    .action(async (params) => {
+        await tomojs.getBalance(params)
         .then(data => {
             console.log(data)
         }).catch(e => console.log(e.message ? e.message : e))

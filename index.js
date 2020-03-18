@@ -19,7 +19,12 @@ class POSVJS {
             pkey = randomWallet.privateKey
         }
         
-        this.provider = new ethers.providers.JsonRpcProvider(endpoint)
+        if (endpoint.endsWith('.ipc')) {
+            this.provider = new ethers.providers.IpcProvider(endpoint)
+        } else {
+            this.provider = new ethers.providers.JsonRpcProvider(endpoint)
+        }
+
         this.wallet = new ethers.Wallet(pkey, this.provider)
         this.coinbase = this.wallet.address
 
@@ -171,6 +176,11 @@ class POSVJS {
         } catch (error) {
             throw error
         }
+    }
+
+    async getBalance ({address}) {
+        let balance = await this.provider.getBalance(address || this.coinbase)
+        return ethers.utils.formatEther(balance)
     }
 }
 
