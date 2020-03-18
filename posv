@@ -48,7 +48,7 @@ commander
         if (!params.keystore) {
             questions.push({
                 type : 'password',
-                name : 'traderPKey',
+                name : 'userPKey',
                 message : 'Enter trader private key (default: Random)...'
             })
         }
@@ -182,6 +182,13 @@ commander
         .then(data => {
             console.log(data)
         }).catch(e => console.log(e))
+    })
+
+commander
+    .command('start')
+    .description('starting...')
+    .action(async (params) => {
+        console.log('start')
     })
 
 
