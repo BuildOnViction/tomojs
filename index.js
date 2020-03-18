@@ -191,7 +191,7 @@ class POSVJS {
                 const jsonrpc = { 
                     jsonrpc: '2.0',
                     method: 'eth_getCandidateStatus',
-                    params: [ address, epoch || 'latest' ],
+                    params: [ address, '0x' + parseInt(epoch).toString(16) || 'latest' ],
                     id: 1
                 }
 
