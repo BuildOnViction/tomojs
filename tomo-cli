@@ -268,4 +268,12 @@ commander
         }).catch(e => console.log(e.message ? e.message : e))
     })
 
+commander
+    .command('randomWallet')
+    .description('generate a random wallet')
+    .action(() => {
+        let wallet = tomojs.randomWallet()
+        console.log(wallet)
+    })
+
 commander.parse(process.argv)

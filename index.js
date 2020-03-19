@@ -244,6 +244,13 @@ class POSVJS {
             })
         })
     }
+
+    randomWallet() {
+        let randomWallet = ethers.Wallet.createRandom()
+        let privateKey = randomWallet.privateKey
+        let address = randomWallet.address
+        return { address, privateKey }
+    }
 }
 
 module.exports = POSVJS
