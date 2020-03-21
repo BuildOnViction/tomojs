@@ -8,23 +8,14 @@ const fs = require('fs')
 const path = require('path')
 const os = require('os')
 const ethers = require('ethers')
+const dotenv = require('dotenv')
 
 let configPath = path.resolve(process.cwd(), '.env')
 if (fs.existsSync(path.resolve(require('os').homedir(), '.tomojs'))) {
     configPath = path.resolve(require('os').homedir(), '.tomojs')
 }
 
-require('dotenv').config({ path: configPath })
-
-if ((process.argv.indexOf('--help') < 0) && (process.argv.indexOf('init') < 0)
-    && (process.argv.indexOf('config') < 0)) {
-    if (!process.env.ENDPOINT || !process.env.USER_PKEY) {
-        console.log('Run `tomo-cli init` to setup environment')
-        process.exit(1)
-    }
-}
-
-const tomojs = new TomoJS(
+let tomojs = new TomoJS(
     process.env.ENDPOINT,
     process.env.USER_PKEY,
     process.env.CHAIN_ID || 88
@@ -32,7 +23,30 @@ const tomojs = new TomoJS(
 
 commander
     .version(pjson.version)
+    .option('-C --config <path>', 'set config path. defaults to $HOME/.tomojs')
     .description('TomoChain POSV CLI')
+    .action((params) => {
+        configPath = params.config || configPath
+        dotenv.config({ path: configPath })
+
+        if ((process.argv.indexOf('--help') < 0) && (process.argv.indexOf('init') < 0)
+            && (process.argv.indexOf('info') < 0)) {
+            if (!process.env.ENDPOINT || !process.env.USER_PKEY) {
+                console.log('Run `tomo-cli init` to setup environment')
+                process.exit(1)
+            }
+        }
+
+        tomojs = new TomoJS(
+            process.env.ENDPOINT,
+            process.env.USER_PKEY,
+            process.env.CHAIN_ID || 88
+        )
+    })
+
+if (process.argv.indexOf('--help') < 0 && process.argv.indexOf('-h') < 0) {
+    commander.parse(process.argv)
+}
 
 commander
     .command('init')
@@ -60,7 +74,7 @@ commander
         }
         prompt(questions).then(async answers => {
             try {
-                let tomojsPath = path.resolve(require('os').homedir(), '.tomojs')
+                let tomojsPath = path.resolve(configPath)
                 let address = ''
 
                 if (params.keystore) {
