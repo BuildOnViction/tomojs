@@ -23,6 +23,7 @@ let tomojs = new TomoJS(
 
 commander
     .version(pjson.version)
+    .allowUnknownOption()
     .option('-C --config <path>', 'set config path. defaults to $HOME/.tomojs')
     .description('TomoChain POSV CLI')
     .action((params) => {
