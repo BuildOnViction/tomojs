@@ -8,6 +8,7 @@ const fs = require('fs')
 const path = require('path')
 const os = require('os')
 const ethers = require('ethers')
+const dotenv = require('dotenv')
 const TomoXJS = require('./registration')
 
 let configPath = path.resolve(process.cwd(), '.env')
@@ -15,17 +16,7 @@ if (fs.existsSync(path.resolve(require('os').homedir(), '.tomojs'))) {
     configPath = path.resolve(require('os').homedir(), '.tomojs')
 }
 
-require('dotenv').config({ path: configPath })
-
-if ((process.argv.indexOf('--help') < 0) && (process.argv.indexOf('init') < 0)
-    && (process.argv.indexOf('config') < 0)) {
-    if (!process.env.ENDPOINT || !process.env.USER_PKEY) {
-        console.log('Run `tomo-cli init` to setup environment')
-        process.exit(1)
-    }
-}
-
-const tomojs = new TomoJS(
+let tomojs = new TomoJS(
     process.env.ENDPOINT,
     process.env.USER_PKEY,
     process.env.CHAIN_ID || 88
@@ -39,7 +30,31 @@ const tomoxjs = new TomoXJS(
 
 commander
     .version(pjson.version)
+    .allowUnknownOption()
+    .option('-C --config <path>', 'set config path. defaults to $HOME/.tomojs')
     .description('TomoChain POSV CLI')
+    .action((params) => {
+        configPath = params.config || configPath
+        dotenv.config({ path: configPath })
+
+        if ((process.argv.indexOf('--help') < 0) && (process.argv.indexOf('init') < 0)
+            && (process.argv.indexOf('info') < 0)) {
+            if (!process.env.ENDPOINT || !process.env.USER_PKEY) {
+                console.log('Run `tomo-cli init` to setup environment')
+                process.exit(1)
+            }
+        }
+
+        tomojs = new TomoJS(
+            process.env.ENDPOINT,
+            process.env.USER_PKEY,
+            process.env.CHAIN_ID || 88
+        )
+    })
+
+if (process.argv.indexOf('--help') < 0 && process.argv.indexOf('-h') < 0) {
+    commander.parse(process.argv)
+}
 
 commander
     .command('init')
@@ -67,7 +82,7 @@ commander
         }
         prompt(questions).then(async answers => {
             try {
-                let tomojsPath = path.resolve(require('os').homedir(), '.tomojs')
+                let tomojsPath = path.resolve(configPath)
                 let address = ''
 
                 if (params.keystore) {
@@ -285,7 +300,7 @@ commander
 
 // TOMOX commands
 commander
-    .command('registerRelayer')
+    .command('register-relayer')
     .description('resigter a relayer')
     .option('-y, --yes', 'ignore question')
     .requiredOption('-a, --amount <amount>', 'Deposit amount')
@@ -330,7 +345,7 @@ commander
     })
 
 commander
-    .command('updateRelayer')
+    .command('update-relayer')
     .description('update a relayer')
     .requiredOption('-n, --node <node>', 'Node address')
     .requiredOption('-f, --tradeFee <tradeFee>', 'Trade fee')
@@ -348,7 +363,7 @@ commander
     })
 
 commander
-    .command('resignRelayer')
+    .command('resign-relayer')
     .description('resign a relayer')
     .option('-y, --yes', 'ignore question')
     .requiredOption('-n, --node <node>', 'Node address')
@@ -381,7 +396,7 @@ commander
     })
 
 commander
-    .command('depositRelayer')
+    .command('deposit-relayer')
     .description('deposit to relayer')
     .requiredOption('-a, --amount <amount>', 'Amount of TOMO')
     .requiredOption('-n, --node <node>', 'Node address')
@@ -395,7 +410,7 @@ commander
     })
 
 commander
-    .command('transferRelayer')
+    .command('transfer-relayer')
     .description('transfer a relayer to new owner')
     .requiredOption('-n, --node <node>', 'Node address')
     .requiredOption('-o, --newOwner <newOwner>', 'New owner')
@@ -409,7 +424,7 @@ commander
     })
 
 commander
-    .command('withdrawRelayer')
+    .command('withdraw-relayer')
     .description('withdraw TOMO after 30 days of resigning a relayer')
     .requiredOption('-n, --node <node>', 'Node address')
     .action(async (params) => {
