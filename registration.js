@@ -57,6 +57,9 @@ class Registration {
         quoteTokens
     }) {
         try {
+            if (tradeFee < 1 || tradeFee > 1000) {
+                throw new Error('Trade fee must be from 1 to 1000')
+            }
             const amountBN = new BigNumber(amount).multipliedBy(10 ** 18).toString(10)
             const nonce = await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
@@ -93,6 +96,9 @@ class Registration {
         quoteTokens
     }) {
         try {
+            if (tradeFee < 1 || tradeFee > 1000) {
+                throw new Error('Trade fee must be from 1 to 1000')
+            }
             const tradeFeeBN = ethers.utils.hexlify(ethers.utils.bigNumberify(tradeFee))
             const nonce = await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
@@ -131,8 +137,14 @@ class Registration {
                 nonce
             }
 
-            const result = await this.contract.functions.resign(node, txParams)
-            return result
+            const checkCoinbase = await this.getRelayerByAddress(node)
+            if (checkCoinbase) {
+                const result = await this.contract.functions.resign(node, txParams)
+                return result
+            } else {
+                throw new Error('Cannot find node address')
+            }
+            
         } catch (error) {
             throw error
         }
