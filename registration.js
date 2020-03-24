@@ -15,7 +15,7 @@ class Registration {
         chainId = 88
     ) {
         this.endpoint = endpoint
-        this.chainId = chainId ? chainId : (this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89)
+        this.chainId = chainId ? Number(chainId) : (this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89)
         if (!pkey) {
             let randomWallet = ethers.Wallet.createRandom()
             pkey = randomWallet.privateKey
