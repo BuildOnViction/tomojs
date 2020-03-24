@@ -9,6 +9,7 @@ const path = require('path')
 const os = require('os')
 const ethers = require('ethers')
 const dotenv = require('dotenv')
+const TomoXJS = require('./registration')
 
 let configPath = path.resolve(process.cwd(), '.env')
 if (fs.existsSync(path.resolve(require('os').homedir(), '.tomojs'))) {
@@ -16,6 +17,12 @@ if (fs.existsSync(path.resolve(require('os').homedir(), '.tomojs'))) {
 }
 
 let tomojs = new TomoJS(
+    process.env.ENDPOINT,
+    process.env.USER_PKEY,
+    process.env.CHAIN_ID || 88
+)
+
+const tomoxjs = new TomoXJS(
     process.env.ENDPOINT,
     process.env.USER_PKEY,
     process.env.CHAIN_ID || 88
@@ -291,4 +298,140 @@ commander
         console.log(wallet)
     })
 
+// TOMOX commands
+commander
+    .command('register-relayer')
+    .description('resigter a relayer')
+    .option('-y, --yes', 'ignore question')
+    .requiredOption('-a, --amount <amount>', 'Deposit amount')
+    .requiredOption('-n, --node <node>', 'Node address')
+    .requiredOption('-f, --tradeFee <tradeFee>', 'Trade fee')
+    .requiredOption('-b, --baseTokens <baseTokens>', 'Base tokens')
+    .requiredOption('-q, --quoteTokens <quoteTokens>', 'Quote tokens')
+    .action(async (params) => {
+        const questions = [{
+            type : 'list',
+            name : 'answer',
+            message : 'This process cannot be undone. Do you want to continue?',
+            default: 'Yes',
+            choices: ['Yes', new Separator(), 'No']
+        }]
+
+        if (params.yes) {
+            await tomoxjs.register({
+                amount: params.amount,
+                node: params.node,
+                tradeFee: params.tradeFee,
+                baseTokens: params.baseTokens,
+                quoteTokens: params.quoteTokens
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        } else {
+            prompt(questions).then(async answers => {
+                if (answers.answer === 'Yes') {
+                    await tomoxjs.register({
+                        amount: params.amount,
+                        node: params.node,
+                        tradeFee: params.tradeFee,
+                        baseTokens: params.baseTokens,
+                        quoteTokens: params.quoteTokens
+                    }).then(data => {
+                        console.log(data)
+                    }).catch(e => console.log(e.message ? e.message : e))
+                }
+            })
+        }
+    })
+
+commander
+    .command('update-relayer')
+    .description('update a relayer')
+    .requiredOption('-n, --node <node>', 'Node address')
+    .requiredOption('-f, --tradeFee <tradeFee>', 'Trade fee')
+    .requiredOption('-b, --baseTokens <baseTokens>', 'Base tokens')
+    .requiredOption('-q, --quoteTokens <quoteTokens>', 'Quote tokens')
+    .action(async (params) => {
+        await tomoxjs.update({
+                node: params.node,
+                tradeFee: params.tradeFee,
+                baseTokens: params.baseTokens,
+                quoteTokens: params.quoteTokens
+        }).then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
+
+commander
+    .command('resign-relayer')
+    .description('resign a relayer')
+    .option('-y, --yes', 'ignore question')
+    .requiredOption('-n, --node <node>', 'Node address')
+    .action(async (params) => {
+        const questions = [{
+            type : 'list',
+            name : 'answer',
+            message : 'This process cannot be undone and your staked TOMO will be locked 30 days. Do you want to continue?',
+            default: 'Yes',
+            choices: ['Yes', new Separator(), 'No']
+        }]
+
+        if (params.yes) {
+            await tomoxjs.resign({
+                node: params.node
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        } else {
+            prompt(questions).then(async answers => {
+                if (answers.answer === 'Yes') {
+                    await tomoxjs.resign({
+                        node: params.node
+                    }).then(data => {
+                        console.log(data)
+                    }).catch(e => console.log(e.message ? e.message : e))
+                }
+            })
+        }
+    })
+
+commander
+    .command('deposit-relayer')
+    .description('deposit to relayer')
+    .requiredOption('-a, --amount <amount>', 'Amount of TOMO')
+    .requiredOption('-n, --node <node>', 'Node address')
+    .action(async (params) => {
+        await tomoxjs.deposit({
+                amount: params.amount,
+                node: params.node
+        }).then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
+
+commander
+    .command('transfer-relayer')
+    .description('transfer a relayer to new owner')
+    .requiredOption('-n, --node <node>', 'Node address')
+    .requiredOption('-o, --newOwner <newOwner>', 'New owner')
+    .action(async (params) => {
+        await tomoxjs.transfer({
+                node: params.node,
+                newOwner: params.newOwner
+        }).then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
+
+commander
+    .command('withdraw-relayer')
+    .description('withdraw TOMO after 30 days of resigning a relayer')
+    .requiredOption('-n, --node <node>', 'Node address')
+    .action(async (params) => {
+        await tomoxjs.withdraw({
+                node: params.node
+        }).then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
 commander.parse(process.argv)
