@@ -9,7 +9,8 @@ const path = require('path')
 const os = require('os')
 const ethers = require('ethers')
 const dotenv = require('dotenv')
-const TomoXJS = require('./registration')
+const RelayerJS = require('./registration')
+const IssuerJS = require('./issuer')
 
 let configPath = path.resolve(process.cwd(), '.env')
 if (fs.existsSync(path.resolve(require('os').homedir(), '.tomojs'))) {
@@ -22,7 +23,13 @@ let tomojs = new TomoJS(
     process.env.CHAIN_ID || 88
 )
 
-const tomoxjs = new TomoXJS(
+let relayerjs = new RelayerJS(
+    process.env.ENDPOINT,
+    process.env.USER_PKEY,
+    process.env.CHAIN_ID || 88
+)
+
+let issuerjs = new IssuerJS(
     process.env.ENDPOINT,
     process.env.USER_PKEY,
     process.env.CHAIN_ID || 88
@@ -46,6 +53,18 @@ commander
         }
 
         tomojs = new TomoJS(
+            process.env.ENDPOINT,
+            process.env.USER_PKEY,
+            process.env.CHAIN_ID || 88
+        )
+
+        relayerjs = new RelayerJS(
+            process.env.ENDPOINT,
+            process.env.USER_PKEY,
+            process.env.CHAIN_ID || 88
+        )
+        
+        issuerjs = new IssuerJS(
             process.env.ENDPOINT,
             process.env.USER_PKEY,
             process.env.CHAIN_ID || 88
@@ -300,7 +319,7 @@ commander
 
 // TOMOX commands
 commander
-    .command('register-relayer')
+    .command('relayer-register')
     .description('resigter a relayer')
     .option('-y, --yes', 'ignore question')
     .requiredOption('-a, --amount <amount>', 'Deposit amount')
@@ -318,7 +337,7 @@ commander
         }]
 
         if (params.yes) {
-            await tomoxjs.register({
+            await relayerjs.register({
                 amount: params.amount,
                 node: params.node,
                 tradeFee: params.tradeFee,
@@ -330,7 +349,7 @@ commander
         } else {
             prompt(questions).then(async answers => {
                 if (answers.answer === 'Yes') {
-                    await tomoxjs.register({
+                    await relayerjs.register({
                         amount: params.amount,
                         node: params.node,
                         tradeFee: params.tradeFee,
@@ -345,14 +364,14 @@ commander
     })
 
 commander
-    .command('update-relayer')
+    .command('relayer-update')
     .description('update a relayer')
     .requiredOption('-n, --node <node>', 'Node address')
     .requiredOption('-f, --tradeFee <tradeFee>', 'Trade fee')
     .requiredOption('-b, --baseTokens <baseTokens>', 'Base tokens')
     .requiredOption('-q, --quoteTokens <quoteTokens>', 'Quote tokens')
     .action(async (params) => {
-        await tomoxjs.update({
+        await relayerjs.update({
                 node: params.node,
                 tradeFee: params.tradeFee,
                 baseTokens: params.baseTokens,
@@ -363,7 +382,7 @@ commander
     })
 
 commander
-    .command('resign-relayer')
+    .command('relayer-resign')
     .description('resign a relayer')
     .option('-y, --yes', 'ignore question')
     .requiredOption('-n, --node <node>', 'Node address')
@@ -377,7 +396,7 @@ commander
         }]
 
         if (params.yes) {
-            await tomoxjs.resign({
+            await relayerjs.resign({
                 node: params.node
             }).then(data => {
                 console.log(data)
@@ -385,7 +404,7 @@ commander
         } else {
             prompt(questions).then(async answers => {
                 if (answers.answer === 'Yes') {
-                    await tomoxjs.resign({
+                    await relayerjs.resign({
                         node: params.node
                     }).then(data => {
                         console.log(data)
@@ -396,12 +415,12 @@ commander
     })
 
 commander
-    .command('deposit-relayer')
+    .command('relayer-deposit')
     .description('deposit to relayer')
     .requiredOption('-a, --amount <amount>', 'Amount of TOMO')
     .requiredOption('-n, --node <node>', 'Node address')
     .action(async (params) => {
-        await tomoxjs.deposit({
+        await relayerjs.deposit({
                 amount: params.amount,
                 node: params.node
         }).then(data => {
@@ -415,7 +434,7 @@ commander
     .requiredOption('-n, --node <node>', 'Node address')
     .requiredOption('-o, --newOwner <newOwner>', 'New owner')
     .action(async (params) => {
-        await tomoxjs.transfer({
+        await relayerjs.transfer({
                 node: params.node,
                 newOwner: params.newOwner
         }).then(data => {
@@ -424,13 +443,134 @@ commander
     })
 
 commander
-    .command('withdraw-relayer')
+    .command('relayer-withdraw')
     .description('withdraw TOMO after 30 days of resigning a relayer')
     .requiredOption('-n, --node <node>', 'Node address')
     .action(async (params) => {
-        await tomoxjs.withdraw({
+        await relayerjs.withdraw({
                 node: params.node
         }).then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
+
+// Issuer
+commander
+    .command('issuer-token')
+    .description('Issue token')
+    .requiredOption('-n, --tokenName <tokenName>', 'Token name')
+    .requiredOption('-s, --tokenSymbol <tokenSymbol>', 'Token symbol')
+    .requiredOption('-t, --totalSupply <totalSupply>', 'Total supply')
+    .requiredOption('-d, --decimals <decimals>', 'Decimals')
+    .action(async (params) => {
+        await issuerjs.issueTRC21({
+            name: params.tokenName,
+            symbol: params.tokenSymbol,
+            totalSupply: params.totalSupply,
+            decimals: params.decimals
+        }).then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
+
+commander
+    .command('issuer-update-fee')
+    .description('Update token transfer fee')
+    .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
+    .requiredOption('-f, --fee <fee>', 'New fee')
+    .action(async (params) => {
+        await issuerjs.updateFee({
+            tokenAddress: params.tokenAddress,
+            fee: params.fee
+        }).then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
+
+commander
+    .command('issuer-deposit-fee')
+    .description('Deposit token pooling fee')
+    .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
+    .requiredOption('-a, --amount <amount>', 'Deposit amount')
+    .action(async (params) => {
+        await issuerjs.depositPoolingFee({
+            tokenAddress: params.tokenAddress,
+            amount: params.amount
+        }).then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
+
+commander
+    .command('issuer-apply-tomoz')
+    .description('Deposit token pooling fee')
+    .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
+    .requiredOption('-a, --amount <amount>', 'Deposit amount')
+    .action(async (params) => {
+        await issuerjs.applyTomoZ({
+            tokenAddress: params.tokenAddress,
+            amount: params.amount
+        }).then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
+
+commander
+    .command('issuer-apply-tomox')
+    .description('Deposit token pooling fee')
+    .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
+    .requiredOption('-a, --amount <amount>', 'Deposit amount')
+    .action(async (params) => {
+        await issuerjs.applyTomoX({
+            tokenAddress: params.tokenAddress,
+            amount: params.amount
+        }).then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
+
+commander
+    .command('issuer-tomoz-tokens')
+    .description('Get tokens that applied to tomoz')
+    .action(async (params) => {
+        await issuerjs.getTokensTomoZ()
+        .then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
+
+commander
+    .command('issuer-tomox-tokens')
+    .description('Get tokens that applied to tomoz')
+    .action(async (params) => {
+        await issuerjs.getTokensTomoX()
+        .then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
+
+commander
+    .command('issuer-check-apply-tomoz')
+    .description('Get tokens that applied to tomoz')
+    .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
+    .action(async (params) => {
+        await issuerjs.isAppliedTomoZ(
+            params.tokenAddress
+        )
+        .then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
+
+commander
+    .command('issuer-check-apply-tomox')
+    .description('Get tokens that applied to tomox')
+    .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
+    .action(async (params) => {
+        await issuerjs.isAppliedTomoX(
+            params.tokenAddress
+        )
+        .then(data => {
             console.log(data)
         }).catch(e => console.log(e.message ? e.message : e))
     })
