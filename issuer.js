@@ -35,7 +35,7 @@ function compileContract (contractCode) {
     }
 }
 
-async function getABI (isMintable) {
+async function getABI (isMintable = true) {
     let p
     if (isMintable) {
         p = path.resolve(__dirname, './abis', 'MyTRC21Mintable.json')
@@ -131,6 +131,10 @@ class Issuer {
             
             await contract.deployed()
             return {
+                name,
+                symbol,
+                totalSupply,
+                decimals,
                 contractAddress: contract.address,
                 transactionHash: contract.deployTransaction.hash
             }
@@ -139,63 +143,74 @@ class Issuer {
         }
     }
 
-    async updateFee ({ tokenAddress, fee, isMintable }) {
+    async updateFee ({ tokenAddress, fee }) {
         try {
-            const abi = getABI(isMintable)
-            const nonce = this.provider.getTransactionCount(this.coinbase)
-            const gasPrice = this.provider.getGasPrice()
+            const isAppliedTomoZ = await this.isAppliedTomoZ(tokenAddress)
 
-            const contract = new ethers.Contract(
-                tokenAddress,
-                await abi,
-                this.wallet
-            )
-            const owner = await contract.functions.issuer()
-            if (this.coinbase.toLowerCase() !== owner.toLowerCase()) {
-                throw new Error('Only owner of the contract can edit fee')
+            if (!isAppliedTomoZ) {
+                throw new Error('This token have not applied to TomoZ')
+            } else {
+                const abi = getABI()
+                const nonce = this.provider.getTransactionCount(this.coinbase)
+                const gasPrice = this.provider.getGasPrice()
+
+                const contract = new ethers.Contract(
+                    tokenAddress,
+                    await abi,
+                    this.wallet
+                )
+                const owner = await contract.functions.issuer()
+                if (this.coinbase.toLowerCase() !== owner.toLowerCase()) {
+                    throw new Error('Only owner of the contract can edit fee')
+                }
+
+                const txParams = {
+                    gasLimit: ethers.utils.hexlify(2000000),
+                    gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(await gasPrice)),
+                    chainId: this.chainId,
+                    nonce: await nonce
+                }
+
+                const decimals = contract.functions.decimals()
+                const result = await contract.functions.setMinFee(
+                    (new BigNumber(fee).multipliedBy(10 ** await decimals)).toString(10),
+                    txParams
+                )
+                return result
             }
-
-            const txParams = {
-                gasLimit: ethers.utils.hexlify(2000000),
-                gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(await gasPrice)),
-                chainId: this.chainId,
-                nonce: await nonce
-            }
-
-            const decimals = contract.functions.decimals()
-            const result = await contract.functions.setMinFee(
-                (new BigNumber(fee).multipliedBy(10 ** await decimals)).toString(10),
-                txParams
-            )
-            return result
         } catch (error) {
             throw error
         }
     }
 
-    async depositPoolingFee ({ tokenAddress, amount, isMintable }) {
+    async depositPoolingFee ({ tokenAddress, amount }) {
         try {
-            const depAmountBN = new BigNumber(amount).multipliedBy(10 ** 18).toString(10)
-            const nonce = this.provider.getTransactionCount(this.coinbase)
-            const gasPrice = this.provider.getGasPrice()
-            
-            const txParams = {
-                value: ethers.utils.hexlify(ethers.utils.bigNumberify(depAmountBN)),
-                gasLimit: ethers.utils.hexlify(2000000),
-                gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(await gasPrice)),
-                chainId: this.chainId,
-                nonce: await nonce
-            }
+            const isAppliedTomoZ = await this.isAppliedTomoZ(tokenAddress)
 
-            const result = await this.issuerContract.functions.charge(
-                tokenAddress,
-                txParams
-            )
-            const receipt = await this.provider.getTransactionReceipt(result.hash || '')
-            if (receipt.status) {
-                return result
+            if (!isAppliedTomoZ) {
+                throw new Error('This token have not applied to TomoZ')
             } else {
-                throw new Error('Something went wrong \n txHash: ' + result.hash || '')
+                const depAmountBN = new BigNumber(amount).multipliedBy(10 ** 18).toString(10)
+                const nonce = this.provider.getTransactionCount(this.coinbase)
+                const gasPrice = this.provider.getGasPrice()
+                const txParams = {
+                    value: ethers.utils.hexlify(ethers.utils.bigNumberify(depAmountBN)),
+                    gasLimit: ethers.utils.hexlify(2000000),
+                    gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(await gasPrice)),
+                    chainId: this.chainId,
+                    nonce: await nonce
+                }
+    
+                const result = await this.issuerContract.functions.charge(
+                    tokenAddress,
+                    txParams
+                )
+                const receipt = await this.provider.getTransactionReceipt(result.hash || '')
+                if (receipt.status) {
+                    return result
+                } else {
+                    throw new Error('Something went wrong \n result: ' + result || '')
+                }
             }
         } catch (error) {
             throw error
@@ -252,7 +267,7 @@ class Issuer {
             const isAppliedTomoZ = await this.isAppliedTomoZ(tokenAddress)
 
             if (isAppliedTomoZ) {
-                throw new Error('This token have already applied TomoZ')
+                throw new Error('This token have already applied to TomoZ')
             } else {
                 const depAmountBN = new BigNumber(amount).multipliedBy(10 ** 18).toString(10)
                 const nonce = this.provider.getTransactionCount(this.coinbase)
@@ -273,7 +288,7 @@ class Issuer {
                 if (receipt.status) {
                     return result
                 } else {
-                    throw new Error('Something went wrong \n txHash: ' + result.hash || '')
+                    throw new Error('Something went wrong \n result: ' + result || '')
                 }
             }
         } catch (error) {
@@ -289,7 +304,7 @@ class Issuer {
             const isAppliedTomoX = await this.isAppliedTomoX(tokenAddress)
 
             if (isAppliedTomoX) {
-                throw new Error('This token have already applied TomoX')
+                throw new Error('This token have already applied to TomoX')
             } else {
                 const depAmountBN = new BigNumber(amount).multipliedBy(10 ** 18).toString(10)
                 const nonce = this.provider.getTransactionCount(this.coinbase)
@@ -306,11 +321,13 @@ class Issuer {
                     tokenAddress,
                     txParams
                 )
+
                 const receipt = await this.provider.getTransactionReceipt(result.hash || '')
+
                 if (receipt.status) {
                     return result
                 } else {
-                    throw new Error('Something went wrong \n txHash: ' + result.hash || '')
+                    throw new Error('Something went wrong \n result: ' + result || '')
                 } 
             }
         } catch (error) {
