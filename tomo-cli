@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 
 const commander = require('commander')
-const TomoJS = require('./index')
+const {
+    TomoJS,
+    RelayerJS,
+    IssuerJS
+} = require('./index')
 const pjson = require('./package.json')
 const { prompt, Separator } = require('inquirer')
 const fs = require('fs')
@@ -9,8 +13,6 @@ const path = require('path')
 const os = require('os')
 const ethers = require('ethers')
 const dotenv = require('dotenv')
-const RelayerJS = require('./registration')
-const IssuerJS = require('./issuer')
 
 let configPath = path.resolve(process.cwd(), '.env')
 if (fs.existsSync(path.resolve(require('os').homedir(), '.tomojs'))) {
