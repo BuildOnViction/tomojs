@@ -58,6 +58,7 @@ class Issuer {
         pkey = '', // sample
         chainId = 88
     ) {
+        this.gasLimit = 2000000
         this.endpoint = endpoint
         this.chainId = chainId ? Number(chainId) : (this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89)
         if (!pkey) {
@@ -115,7 +116,7 @@ class Issuer {
             )
             const nonce = this.provider.getTransactionCount(this.coinbase)
             const txParams = {
-                gasLimit: ethers.utils.hexlify(2000000),
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
                 gasPrice: ethers.utils.hexlify(10000000000000),
                 chainId: this.chainId,
                 nonce: await nonce
@@ -165,7 +166,7 @@ class Issuer {
                 }
 
                 const txParams = {
-                    gasLimit: ethers.utils.hexlify(2000000),
+                    gasLimit: ethers.utils.hexlify(this.gasLimit),
                     gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(await gasPrice)),
                     chainId: this.chainId,
                     nonce: await nonce
@@ -195,7 +196,7 @@ class Issuer {
                 const gasPrice = this.provider.getGasPrice()
                 const txParams = {
                     value: ethers.utils.hexlify(ethers.utils.bigNumberify(depAmountBN)),
-                    gasLimit: ethers.utils.hexlify(2000000),
+                    gasLimit: ethers.utils.hexlify(this.gasLimit),
                     gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(await gasPrice)),
                     chainId: this.chainId,
                     nonce: await nonce
@@ -209,7 +210,7 @@ class Issuer {
                 if (receipt.status) {
                     return result
                 } else {
-                    throw new Error('Something went wrong \n result: ' + result || '')
+                    throw new Error('Something went wrong \n txHash: ' + result.hash || '')
                 }
             }
         } catch (error) {
@@ -274,7 +275,7 @@ class Issuer {
                 const gasPrice = this.provider.getGasPrice()
                 const txParams = {
                     value: ethers.utils.hexlify(ethers.utils.bigNumberify(depAmountBN)),
-                    gasLimit: ethers.utils.hexlify(2000000),
+                    gasLimit: ethers.utils.hexlify(this.gasLimit),
                     gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(await gasPrice)),
                     chainId: this.chainId,
                     nonce: await nonce
@@ -288,7 +289,7 @@ class Issuer {
                 if (receipt.status) {
                     return result
                 } else {
-                    throw new Error('Something went wrong \n result: ' + result || '')
+                    throw new Error('Something went wrong \n txHash: ' + result.hash || '')
                 }
             }
         } catch (error) {
@@ -311,7 +312,7 @@ class Issuer {
                 const gasPrice = this.provider.getGasPrice()
                 const txParams = {
                     value: ethers.utils.hexlify(ethers.utils.bigNumberify(depAmountBN)),
-                    gasLimit: ethers.utils.hexlify(2000000),
+                    gasLimit: ethers.utils.hexlify(this.gasLimit),
                     gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(await gasPrice)),
                     chainId: this.chainId,
                     nonce: await nonce
@@ -327,8 +328,83 @@ class Issuer {
                 if (receipt.status) {
                     return result
                 } else {
-                    throw new Error('Something went wrong \n result: ' + result || '')
-                } 
+                    throw new Error('Something went wrong \n txHash: ' + result.hash || '')
+                }
+            }
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async reissueToken({ tokenAddress, toAddress = this.coinbase, amount }) {
+        try {
+            const abi = getABI()
+
+            const contract = new ethers.Contract(
+                tokenAddress,
+                await abi,
+                this.wallet
+            )
+
+            const reissueAmountBN = new BigNumber(amount).multipliedBy(10 ** 18).toString(10)
+            const nonce = this.provider.getTransactionCount(this.coinbase)
+            const gasPrice = this.provider.getGasPrice()
+            const txParams = {
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
+                gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(await gasPrice)),
+                chainId: this.chainId,
+                nonce: await nonce
+            }
+
+            const result = await contract.functions.mint(
+                toAddress,
+                ethers.utils.hexlify(ethers.utils.bigNumberify(reissueAmountBN)),
+                txParams
+            )
+
+            const receipt = await this.provider.getTransactionReceipt(result.hash || '')
+
+            if (receipt.status) {
+                return result
+            } else {
+                throw new Error('Something went wrong \n txHash: ' + result.hash || '')
+            }
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async burnToken({ tokenAddress , amount }) {
+        try {
+            const abi = getABI()
+
+            const contract = new ethers.Contract(
+                tokenAddress,
+                await abi,
+                this.wallet
+            )
+
+            const burnAmountBN = new BigNumber(amount).multipliedBy(10 ** 18).toString(10)
+            const nonce = this.provider.getTransactionCount(this.coinbase)
+            const gasPrice = this.provider.getGasPrice()
+            const txParams = {
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
+                gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(await gasPrice)),
+                chainId: this.chainId,
+                nonce: await nonce
+            }
+
+            const result = await contract.functions.burn(
+                ethers.utils.hexlify(ethers.utils.bigNumberify(burnAmountBN)),
+                txParams
+            )
+
+            const receipt = await this.provider.getTransactionReceipt(result.hash || '')
+
+            if (receipt.status) {
+                return result
+            } else {
+                throw new Error('Something went wrong \n txHash: ' + result.hash || '')
             }
         } catch (error) {
             throw error
