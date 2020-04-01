@@ -14,6 +14,7 @@ class Registration {
         pkey = '', // sample
         chainId = 88
     ) {
+        this.gasLimit = 4000000
         this.endpoint = endpoint
         this.chainId = chainId ? Number(chainId) : (this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89)
         if (!pkey) {
@@ -65,7 +66,7 @@ class Registration {
             let txParams = {
                 value: ethers.utils.hexlify(ethers.utils.bigNumberify(amountBN)),
                 gasPrice: ethers.utils.hexlify(250000000000000),
-                gasLimit: ethers.utils.hexlify(4000000),
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
             }
@@ -103,7 +104,7 @@ class Registration {
             const nonce = await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
                 gasPrice: ethers.utils.hexlify(250000000000000),
-                gasLimit: ethers.utils.hexlify(4000000),
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
             }
@@ -132,7 +133,7 @@ class Registration {
             const nonce = await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
                 gasPrice: ethers.utils.hexlify(250000000000000),
-                gasLimit: ethers.utils.hexlify(4000000),
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
             }
@@ -157,7 +158,7 @@ class Registration {
             let txParams = {
                 value: ethers.utils.hexlify(ethers.utils.bigNumberify(amountBN)),
                 gasPrice: ethers.utils.hexlify(250000000000000),
-                gasLimit: ethers.utils.hexlify(4000000),
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
             }
@@ -183,7 +184,7 @@ class Registration {
             const nonce = await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
                 gasPrice: ethers.utils.hexlify(250000000000000),
-                gasLimit: ethers.utils.hexlify(4000000),
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
             }
@@ -212,7 +213,7 @@ class Registration {
             const nonce = await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
                 gasPrice: ethers.utils.hexlify(250000000000000),
-                gasLimit: ethers.utils.hexlify(4000000),
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
             }

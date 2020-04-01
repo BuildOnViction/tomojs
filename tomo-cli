@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 
 const commander = require('commander')
-const TomoJS = require('./index')
+const {
+    TomoJS,
+    RelayerJS,
+    IssuerJS
+} = require('./index')
 const pjson = require('./package.json')
 const { prompt, Separator } = require('inquirer')
 const fs = require('fs')
@@ -9,8 +13,6 @@ const path = require('path')
 const os = require('os')
 const ethers = require('ethers')
 const dotenv = require('dotenv')
-const RelayerJS = require('./registration')
-const IssuerJS = require('./issuer')
 
 let configPath = path.resolve(process.cwd(), '.env')
 if (fs.existsSync(path.resolve(require('os').homedir(), '.tomojs'))) {
@@ -570,6 +572,37 @@ commander
         await issuerjs.isAppliedTomoX(
             params.tokenAddress
         )
+        .then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
+
+commander
+    .command('issuer-reissue-token')
+    .description('Reissue a token')
+    .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
+    .option('-r, --toAddress <toAddress>', 'Address that receives tokens')
+    .requiredOption('-a, --amount <amount>', 'Amount')
+    .action(async (params) => {
+        await issuerjs.reissueToken({
+            tokenAddress: params.tokenAddress,
+            amount: params.amount
+        })
+        .then(data => {
+            console.log(data)
+        }).catch(e => console.log(e.message ? e.message : e))
+    })
+
+commander
+    .command('issuer-burn-token')
+    .description('Reissue a token')
+    .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
+    .requiredOption('-a, --amount <amount>', 'Amount')
+    .action(async (params) => {
+        await issuerjs.burnToken({
+            tokenAddress: params.tokenAddress,
+            amount: params.amount
+        })
         .then(data => {
             console.log(data)
         }).catch(e => console.log(e.message ? e.message : e))
