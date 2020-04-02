@@ -8,7 +8,7 @@ const TomoValidatorAbi = require('./abis/TomoValidator.json')
 
 const validatorAddress = '0x0000000000000000000000000000000000000088'
 
-class POSVJS {
+class TomoJS {
     constructor (
         endpoint = 'http://localhost:8545',
         pkey = '', // sample
@@ -16,7 +16,6 @@ class POSVJS {
     ) {
         this.gasLimit = 2000000
         this.endpoint = endpoint
-        this.chainId = chainId ? Number(chainId) : (this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89)
         if (!pkey) {
             let randomWallet = ethers.Wallet.createRandom()
             pkey = randomWallet.privateKey
@@ -31,11 +30,28 @@ class POSVJS {
         this.wallet = new ethers.Wallet(pkey, this.provider)
         this.coinbase = this.wallet.address
 
+        this.chainId = chainId ? Number(chainId) : (this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89)
         this.contract = new ethers.Contract(
             validatorAddress,
             TomoValidatorAbi.abi,
             this.wallet
         )
+    }
+
+    static setProvider(
+        endpoint = 'http://localhost:8545',
+        pkey = '',
+        chainId = 88
+    ) {
+        return TomoJS.networkInformation(endpoint).then((info) => {
+            return new TomoJS(
+                endpoint, pkey, info.NetworkId
+            )
+        }).catch((e) => {
+            return new TomoJS(
+                endpoint, pkey, chainId
+            )
+        })
     }
 
     async stake ({ amount, node }) {
@@ -265,6 +281,44 @@ class POSVJS {
         let address = randomWallet.address
         return { address, privateKey }
     }
+
+    static networkInformation (endpoint) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = { 
+                    jsonrpc: '2.0',
+                    method: 'posv_networkInformation',
+                    params: [ ],
+                    id: 1
+                }
+
+                let url = urljoin(endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
 }
 
-module.exports = POSVJS
+module.exports = TomoJS

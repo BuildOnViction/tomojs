@@ -42,7 +42,7 @@ commander
     .allowUnknownOption()
     .option('-C --config <path>', 'set config path. defaults to $HOME/.tomojs')
     .description('TomoChain POSV CLI')
-    .action((params) => {
+    .action(async (params) => {
         configPath = params.config || configPath
         dotenv.config({ path: configPath })
 
@@ -54,10 +54,9 @@ commander
             }
         }
 
-        tomojs = new TomoJS(
+        tomojs = await TomoJS.setProvider(
             process.env.ENDPOINT,
-            process.env.USER_PKEY,
-            process.env.CHAIN_ID || 88
+            process.env.USER_PKEY
         )
 
         relayerjs = new RelayerJS(
