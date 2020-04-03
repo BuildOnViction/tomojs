@@ -66,6 +66,7 @@ class RelayerJS {
 
             return {
                 index: new BigNumber(result[0]).toString(10),
+                coinbase: node,
                 owner: result[1],
                 deposit: new BigNumber(result[2]).toString(10),
                 tradeFee: result[3],
@@ -87,8 +88,9 @@ class RelayerJS {
                 const result = await this.contract.functions.getRelayerByCoinbase(coinbase)
                 const resign = await this.contract.functions.RESIGN_REQUESTS(coinbase)
 
-                 ret.push({
+                ret.push({
                     index: new BigNumber(result[0]).toString(10),
+                    coinbase: coinbase,
                     owner: result[1],
                     deposit: new BigNumber(result[2]).toString(10),
                     tradeFee: result[3],
