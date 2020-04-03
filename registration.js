@@ -3,16 +3,16 @@ const request = require('request')
 const urljoin = require('url-join');
 const BigNumber = require('bignumber.js')
 const WebSocket = require('ws')
+const TomoJS = require('./validator')
 
 const RegistrationAbi = require('./abis/Registration.json')
 
-const registrationAddress = '0xA1996F69f47ba14Cb7f661010A7C31974277958c'
-
-class Registration {
+class RelayerJS {
     constructor (
         endpoint = 'http://localhost:8545',
         pkey = '', // sample
-        chainId = 88
+        chainId = 88,
+        registrationAddress = '0xA1996F69f47ba14Cb7f661010A7C31974277958c'
     ) {
         this.gasLimit = 4000000
         this.endpoint = endpoint
@@ -37,6 +37,23 @@ class Registration {
             this.wallet
         )
     }
+
+    static setProvider(
+        endpoint = 'http://localhost:8545',
+        pkey = '',
+        chainId = 88
+    ) {
+        return TomoJS.networkInformation(endpoint).then((info) => {
+            return new RelayerJS(
+                endpoint, pkey, info.NetworkId, info.RelayerRegistrationAddress
+            )
+        }).catch((e) => {
+            return new RelayerJs(
+                endpoint, pkey, chainId
+            )
+        })
+    }
+
 
     async getRelayerByAddress (node) {
         try {
@@ -227,4 +244,4 @@ class Registration {
     }
 }
 
-module.exports = Registration
+module.exports = RelayerJS

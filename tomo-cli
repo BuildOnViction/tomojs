@@ -59,16 +59,14 @@ commander
             process.env.USER_PKEY
         )
 
-        relayerjs = new RelayerJS(
+        relayerjs = await RelayerJS.setProvider(
             process.env.ENDPOINT,
-            process.env.USER_PKEY,
-            process.env.CHAIN_ID || 88
+            process.env.USER_PKEY
         )
         
-        issuerjs = new IssuerJS(
+        issuerjs = await IssuerJS.setProvider(
             process.env.ENDPOINT,
-            process.env.USER_PKEY,
-            process.env.CHAIN_ID || 88
+            process.env.USER_PKEY
         )
     })
 
@@ -135,13 +133,14 @@ commander
 commander
     .command('info')
     .description('show environment')
-    .action(() => {
-        console.log(`
-        configPath: ${configPath}
-        ENDPOINT: ${process.env.ENDPOINT}
-        USER_ADDR: ${process.env.USER_ADDR}
-        USER_PKEY: ******
-        `)
+    .action(async () => {
+        let info = await TomoJS.networkInformation(process.env.ENDPOINT)
+        info.configPath = configPath
+        info.ChainID = info.NetworkId
+        info.ENDPOINT = process.env.ENDPOINT
+        info.USER_ADDR = process.env.USER_ADDR
+        info.USER_PKEY = '******'
+        console.log(info)
     })
 
 commander
