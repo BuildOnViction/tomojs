@@ -39,6 +39,14 @@ let issuerjs = new IssuerJS(
     process.env.CHAIN_ID || 88
 )
 
+function collect(value, previous) {
+    return previous.concat([value]);
+}   
+
+function parseTradeFee(value, previous) {
+    return parseInt(value) 
+}       
+            
 commander
     .version(pjson.version)
     .allowUnknownOption()
@@ -324,9 +332,9 @@ commander.parseAsync(process.argv).then(() => {
         .option('-y, --yes', 'ignore question')
         .requiredOption('-a, --amount <amount>', 'Deposit amount')
         .requiredOption('-n, --node <node>', 'Node address')
-        .requiredOption('-f, --tradeFee <tradeFee>', 'Trade fee')
-        .requiredOption('-b, --baseTokens <baseTokens>', 'Base tokens')
-        .requiredOption('-q, --quoteTokens <quoteTokens>', 'Quote tokens')
+        .requiredOption('-f, --tradeFee <tradeFee>', 'Trade fee', parseTradeFee)
+        .requiredOption('-b, --baseTokens <baseTokens>', 'Base tokens', collect, [])
+        .requiredOption('-q, --quoteTokens <quoteTokens>', 'Quote tokens', collect, [])
         .action(async (params) => {
             const questions = [{
                 type : 'list',
