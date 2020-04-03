@@ -19,6 +19,8 @@ if (fs.existsSync(path.resolve(require('os').homedir(), '.tomojs'))) {
     configPath = path.resolve(require('os').homedir(), '.tomojs')
 }
 
+dotenv.config({ path: configPath })
+
 let tomojs = new TomoJS(
     process.env.ENDPOINT,
     process.env.USER_PKEY,
@@ -41,7 +43,7 @@ commander
     .version(pjson.version)
     .allowUnknownOption()
     .option('-C --config <path>', 'set config path. defaults to $HOME/.tomojs')
-    .description('TomoChain POSV CLI')
+    .description('TomoChain CLI')
     .action(async (params) => {
         configPath = params.config || configPath
         dotenv.config({ path: configPath })
@@ -70,539 +72,538 @@ commander
         )
     })
 
-if (process.argv.indexOf('--help') < 0 && process.argv.indexOf('-h') < 0) {
-    commander.parse(process.argv)
-}
+commander.parseAsync(process.argv).then(() => {
 
-commander
-    .command('init')
-    .description('setup/init environment')
-    .option('-p, --password <password>', 'password', '')
-    .option('-k, --keystore <keystore>', 'path to keystore file')
-    .action(async (params) => {
-        const questions = [{
-            type : 'input',
-            name : 'endpoint',
-            message : 'Enter RPC or IPC endpoint...',
-            default: 'https://rpc.tomochain.com'
-        }, {
-            type : 'input',
-            name : 'chainId',
-            message : 'Enter chain Id...',
-            default: '88'
-        }]
-        if (!params.keystore) {
-            questions.push({
-                type : 'password',
-                name : 'userPKey',
-                message : 'Enter user private key (default: generate random pkey)...'
-            })
-        }
-        prompt(questions).then(async answers => {
-            try {
-                let tomojsPath = path.resolve(configPath)
-                let address = ''
-
-                if (params.keystore) {
-                    let keydata = fs.readFileSync(params.keystore);
-                    let json = JSON.parse(keydata);
-                    let wallet = await ethers.Wallet.fromEncryptedJson(JSON.stringify(json), params.password)
-                    answers.userPKey = wallet.privateKey
-                    address = wallet.address
-                }
-
-                if (!answers.userPKey) {
-                    let randomWallet = ethers.Wallet.createRandom()
-                    answers.userPKey = randomWallet.privateKey
-                    address = randomWallet.address
-                } else {
-                    let wallet = new ethers.Wallet(answers.userPKey)
-                    address = wallet.address
-                }
-                fs.writeFile(tomojsPath, `ENDPOINT=${answers.endpoint}\nUSER_PKEY=${answers.userPKey}\nUSER_ADDR=${address}\nCHAIN_ID=${answers.chainId || 88}\n`, function (err) {
-                    if (err) throw err;
-                    console.log('Address:', address);
-                    console.log('Saved!');
+    commander
+        .command('init')
+        .description('setup/init environment')
+        .option('-p, --password <password>', 'password', '')
+        .option('-k, --keystore <keystore>', 'path to keystore file')
+        .action(async (params) => {
+            const questions = [{
+                type : 'input',
+                name : 'endpoint',
+                message : 'Enter RPC or IPC endpoint...',
+                default: 'https://rpc.tomochain.com'
+            }, {
+                type : 'input',
+                name : 'chainId',
+                message : 'Enter chain Id...',
+                default: '88'
+            }]
+            if (!params.keystore) {
+                questions.push({
+                    type : 'password',
+                    name : 'userPKey',
+                    message : 'Enter user private key (default: generate random pkey)...'
                 })
-            } catch(e) {
-                console.log(e)
+            }
+            prompt(questions).then(async answers => {
+                try {
+                    let tomojsPath = path.resolve(configPath)
+                    let address = ''
+
+                    if (params.keystore) {
+                        let keydata = fs.readFileSync(params.keystore);
+                        let json = JSON.parse(keydata);
+                        let wallet = await ethers.Wallet.fromEncryptedJson(JSON.stringify(json), params.password)
+                        answers.userPKey = wallet.privateKey
+                        address = wallet.address
+                    }
+
+                    if (!answers.userPKey) {
+                        let randomWallet = ethers.Wallet.createRandom()
+                        answers.userPKey = randomWallet.privateKey
+                        address = randomWallet.address
+                    } else {
+                        let wallet = new ethers.Wallet(answers.userPKey)
+                        address = wallet.address
+                    }
+                    fs.writeFile(tomojsPath, `ENDPOINT=${answers.endpoint}\nUSER_PKEY=${answers.userPKey}\nUSER_ADDR=${address}\nCHAIN_ID=${answers.chainId || 88}\n`, function (err) {
+                        if (err) throw err;
+                        console.log('Address:', address);
+                        console.log('Saved!');
+                    })
+                } catch(e) {
+                    console.log(e)
+                }
+            })
+        })
+
+    commander
+        .command('info')
+        .description('show environment')
+        .action(async () => {
+            let info = await TomoJS.networkInformation(process.env.ENDPOINT)
+            info.configPath = configPath
+            info.ChainID = info.NetworkId
+            info.ENDPOINT = process.env.ENDPOINT
+            info.USER_ADDR = process.env.USER_ADDR
+            info.USER_PKEY = '******'
+            console.log(info)
+        })
+
+    commander
+        .command('stake')
+        .description('stake TOMO to a masternode candidate')
+        .requiredOption('-a, --amount <amount>', 'amount (TOMO)')
+        .requiredOption('-s, --node <node>', 'node coinbase address')
+        .action(async (params) => {
+            await tomojs.stake({
+                    amount: params.amount,
+                    node: params.node
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('unstake')
+        .description('unstake TOMO from a masternode candidate')
+        .requiredOption('-a, --amount <amount>', 'amount (TOMO)')
+        .requiredOption('-s, --node <node>', 'node coinbase address')
+        .action(async (params) => {
+            await tomojs.unstake({
+                    amount: params.amount,
+                    node: params.node
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('propose')
+        .description('propose a new masternode candidate')
+        .option('-y, --yes', 'ignore question')
+        .requiredOption('-a, --amount <amount>', 'amount (TOMO)')
+        .requiredOption('-s, --node <node>', 'node coinbase address')
+        .action(async (params) => {
+            const questions = [{
+                type : 'list',
+                name : 'answer',
+                message : 'This process cannot be undone. Do you want to continue?',
+                default: 'Yes',
+                choices: ['Yes', new Separator(), 'No']
+            }]
+
+            if (params.yes) {
+                await tomojs.propose({
+                    amount: params.amount,
+                    node: params.node
+                }).then(data => {
+                    console.log(data)
+                }).catch(e => console.log(e.message ? e.message : e))
+            } else {
+                prompt(questions).then(async answers => {
+                    if (answers.answer === 'Yes') {
+                        await tomojs.propose({
+                            amount: params.amount,
+                            node: params.node
+                        }).then(data => {
+                            console.log(data)
+                        }).catch(e => console.log(e.message ? e.message : e))
+                    }
+                })
             }
         })
-    })
 
-commander
-    .command('info')
-    .description('show environment')
-    .action(async () => {
-        let info = await TomoJS.networkInformation(process.env.ENDPOINT)
-        info.configPath = configPath
-        info.ChainID = info.NetworkId
-        info.ENDPOINT = process.env.ENDPOINT
-        info.USER_ADDR = process.env.USER_ADDR
-        info.USER_PKEY = '******'
-        console.log(info)
-    })
+    commander
+        .command('resign')
+        .description('resign a masternode candidate')
+        .option('-y, --yes', 'ignore question')
+        .requiredOption('-s, --node <node>', 'node coinbase address')
+        .action(async (params) => {
+            const questions = [{
+                type : 'list',
+                name : 'answer',
+                message : 'This process cannot be undone and your staked TOMO will be locked 30 days. Do you want to continue?',
+                default: 'Yes',
+                choices: ['Yes', new Separator(), 'No']
+            }]
 
-commander
-    .command('stake')
-    .description('stake TOMO to a masternode candidate')
-    .requiredOption('-a, --amount <amount>', 'amount (TOMO)')
-    .requiredOption('-s, --node <node>', 'node coinbase address')
-    .action(async (params) => {
-        await tomojs.stake({
-                amount: params.amount,
-                node: params.node
-        }).then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('unstake')
-    .description('unstake TOMO from a masternode candidate')
-    .requiredOption('-a, --amount <amount>', 'amount (TOMO)')
-    .requiredOption('-s, --node <node>', 'node coinbase address')
-    .action(async (params) => {
-        await tomojs.unstake({
-                amount: params.amount,
-                node: params.node
-        }).then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('propose')
-    .description('propose a new masternode candidate')
-    .option('-y, --yes', 'ignore question')
-    .requiredOption('-a, --amount <amount>', 'amount (TOMO)')
-    .requiredOption('-s, --node <node>', 'node coinbase address')
-    .action(async (params) => {
-        const questions = [{
-            type : 'list',
-            name : 'answer',
-            message : 'This process cannot be undone. Do you want to continue?',
-            default: 'Yes',
-            choices: ['Yes', new Separator(), 'No']
-        }]
-
-        if (params.yes) {
-            await tomojs.propose({
-                amount: params.amount,
-                node: params.node
-            }).then(data => {
-                console.log(data)
-            }).catch(e => console.log(e.message ? e.message : e))
-        } else {
-            prompt(questions).then(async answers => {
-                if (answers.answer === 'Yes') {
-                    await tomojs.propose({
-                        amount: params.amount,
-                        node: params.node
-                    }).then(data => {
-                        console.log(data)
-                    }).catch(e => console.log(e.message ? e.message : e))
-                }
-            })
-        }
-    })
-
-commander
-    .command('resign')
-    .description('resign a masternode candidate')
-    .option('-y, --yes', 'ignore question')
-    .requiredOption('-s, --node <node>', 'node coinbase address')
-    .action(async (params) => {
-        const questions = [{
-            type : 'list',
-            name : 'answer',
-            message : 'This process cannot be undone and your staked TOMO will be locked 30 days. Do you want to continue?',
-            default: 'Yes',
-            choices: ['Yes', new Separator(), 'No']
-        }]
-
-        if (params.yes) {
-            await tomojs.resign({
-                node: params.node
-            }).then(data => {
-                console.log(data)
-            }).catch(e => console.log(e.message ? e.message : e))
-        } else {
-            prompt(questions).then(async answers => {
-                if (answers.answer === 'Yes') {
-                    await tomojs.resign({
-                        node: params.node
-                    }).then(data => {
-                        console.log(data)
-                    }).catch(e => console.log(e.message ? e.message : e))
-                }
-            })
-        }
-    })
-
-commander
-    .command('getWithdrawBlockNumbers')
-    .description('show blocknumbers to withdraw TOMO after unstake/resign')
-    .action(async (params) => {
-        await tomojs.getWithdrawBlockNumbers()
-        .then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('withdraw')
-    .description('withdraw TOMO with specify Blocknumber after unstake/resign')
-    .requiredOption('-b, --blockNumber <blockNumber>', 'Block number')
-    .requiredOption('-i, --index <index>', 'Block number index')
-    .action(async (params) => {
-        await tomojs.withdraw({
-                blockNumber: params.blockNumber,
-                index: params.index
-        }).then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('withdrawAll')
-    .description('withdraw all available TOMO after unstake/resign')
-    .action(async (params) => {
-        await tomojs.withdrawAll()
-        .then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('getBalance')
-    .description('get user balance')
-    .option('-a, --address <address>', 'User Address')
-    .action(async (params) => {
-        await tomojs.getBalance(params)
-        .then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('getCandidateStatus')
-    .description('get candidate status')
-    .option('-a, --address <address>', 'Candidate Coinbase')
-    .option('-e, --epoch <epoch>', 'Epoch Number')
-    .action(async (params) => {
-        await tomojs.getCandidateStatus(params)
-        .then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('send')
-    .description('send TOMO to another account')
-    .requiredOption('-a, --address <address>', 'Address Destionation')
-    .requiredOption('-v, --value <value>', 'Value')
-    .action(async (params) => {
-        await tomojs.send(params)
-        .then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('randomWallet')
-    .description('generate a random wallet')
-    .action(() => {
-        let wallet = tomojs.randomWallet()
-        console.log(wallet)
-    })
-
-// TOMOX commands
-commander
-    .command('relayer-register')
-    .description('resigter a relayer')
-    .option('-y, --yes', 'ignore question')
-    .requiredOption('-a, --amount <amount>', 'Deposit amount')
-    .requiredOption('-n, --node <node>', 'Node address')
-    .requiredOption('-f, --tradeFee <tradeFee>', 'Trade fee')
-    .requiredOption('-b, --baseTokens <baseTokens>', 'Base tokens')
-    .requiredOption('-q, --quoteTokens <quoteTokens>', 'Quote tokens')
-    .action(async (params) => {
-        const questions = [{
-            type : 'list',
-            name : 'answer',
-            message : 'This process cannot be undone. Do you want to continue?',
-            default: 'Yes',
-            choices: ['Yes', new Separator(), 'No']
-        }]
-
-        if (params.yes) {
-            await relayerjs.register({
-                amount: params.amount,
-                node: params.node,
-                tradeFee: params.tradeFee,
-                baseTokens: params.baseTokens,
-                quoteTokens: params.quoteTokens
-            }).then(data => {
-                console.log(data)
-            }).catch(e => console.log(e.message ? e.message : e))
-        } else {
-            prompt(questions).then(async answers => {
-                if (answers.answer === 'Yes') {
-                    await relayerjs.register({
-                        amount: params.amount,
-                        node: params.node,
-                        tradeFee: params.tradeFee,
-                        baseTokens: params.baseTokens,
-                        quoteTokens: params.quoteTokens
-                    }).then(data => {
-                        console.log(data)
-                    }).catch(e => console.log(e.message ? e.message : e))
-                }
-            })
-        }
-    })
-
-commander
-    .command('relayer-update')
-    .description('update a relayer')
-    .requiredOption('-n, --node <node>', 'Node address')
-    .requiredOption('-f, --tradeFee <tradeFee>', 'Trade fee')
-    .requiredOption('-b, --baseTokens <baseTokens>', 'Base tokens')
-    .requiredOption('-q, --quoteTokens <quoteTokens>', 'Quote tokens')
-    .action(async (params) => {
-        await relayerjs.update({
-                node: params.node,
-                tradeFee: params.tradeFee,
-                baseTokens: params.baseTokens,
-                quoteTokens: params.quoteTokens
-        }).then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('relayer-resign')
-    .description('resign a relayer')
-    .option('-y, --yes', 'ignore question')
-    .requiredOption('-n, --node <node>', 'Node address')
-    .action(async (params) => {
-        const questions = [{
-            type : 'list',
-            name : 'answer',
-            message : 'This process cannot be undone and your staked TOMO will be locked 30 days. Do you want to continue?',
-            default: 'Yes',
-            choices: ['Yes', new Separator(), 'No']
-        }]
-
-        if (params.yes) {
-            await relayerjs.resign({
-                node: params.node
-            }).then(data => {
-                console.log(data)
-            }).catch(e => console.log(e.message ? e.message : e))
-        } else {
-            prompt(questions).then(async answers => {
-                if (answers.answer === 'Yes') {
-                    await relayerjs.resign({
-                        node: params.node
-                    }).then(data => {
-                        console.log(data)
-                    }).catch(e => console.log(e.message ? e.message : e))
-                }
-            })
-        }
-    })
-
-commander
-    .command('relayer-deposit')
-    .description('deposit to relayer')
-    .requiredOption('-a, --amount <amount>', 'Amount of TOMO')
-    .requiredOption('-n, --node <node>', 'Node address')
-    .action(async (params) => {
-        await relayerjs.deposit({
-                amount: params.amount,
-                node: params.node
-        }).then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('transfer-relayer')
-    .description('transfer a relayer to new owner')
-    .requiredOption('-n, --node <node>', 'Node address')
-    .requiredOption('-o, --newOwner <newOwner>', 'New owner')
-    .action(async (params) => {
-        await relayerjs.transfer({
-                node: params.node,
-                newOwner: params.newOwner
-        }).then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('relayer-withdraw')
-    .description('withdraw TOMO after 30 days of resigning a relayer')
-    .requiredOption('-n, --node <node>', 'Node address')
-    .action(async (params) => {
-        await relayerjs.withdraw({
-                node: params.node
-        }).then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-// Issuer
-commander
-    .command('issuer-token')
-    .description('Issue token')
-    .requiredOption('-n, --tokenName <tokenName>', 'Token name')
-    .requiredOption('-s, --tokenSymbol <tokenSymbol>', 'Token symbol')
-    .requiredOption('-t, --totalSupply <totalSupply>', 'Total supply')
-    .requiredOption('-d, --decimals <decimals>', 'Decimals')
-    .action(async (params) => {
-        await issuerjs.issueTRC21({
-            name: params.tokenName,
-            symbol: params.tokenSymbol,
-            totalSupply: params.totalSupply,
-            decimals: params.decimals
-        }).then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('issuer-update-fee')
-    .description('Update token transfer fee')
-    .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
-    .requiredOption('-f, --fee <fee>', 'New fee')
-    .action(async (params) => {
-        await issuerjs.updateFee({
-            tokenAddress: params.tokenAddress,
-            fee: params.fee
-        }).then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('issuer-deposit-fee')
-    .description('Deposit token pooling fee')
-    .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
-    .requiredOption('-a, --amount <amount>', 'Deposit amount')
-    .action(async (params) => {
-        await issuerjs.depositPoolingFee({
-            tokenAddress: params.tokenAddress,
-            amount: params.amount
-        }).then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('issuer-apply-tomoz')
-    .description('Deposit token pooling fee')
-    .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
-    .requiredOption('-a, --amount <amount>', 'Deposit amount')
-    .action(async (params) => {
-        await issuerjs.applyTomoZ({
-            tokenAddress: params.tokenAddress,
-            amount: params.amount
-        }).then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('issuer-apply-tomox')
-    .description('Deposit token pooling fee')
-    .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
-    .requiredOption('-a, --amount <amount>', 'Deposit amount')
-    .action(async (params) => {
-        await issuerjs.applyTomoX({
-            tokenAddress: params.tokenAddress,
-            amount: params.amount
-        }).then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('issuer-tomoz-tokens')
-    .description('Get tokens that applied to tomoz')
-    .action(async (params) => {
-        await issuerjs.getTokensTomoZ()
-        .then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('issuer-tomox-tokens')
-    .description('Get tokens that applied to tomoz')
-    .action(async (params) => {
-        await issuerjs.getTokensTomoX()
-        .then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('issuer-check-apply-tomoz')
-    .description('Get tokens that applied to tomoz')
-    .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
-    .action(async (params) => {
-        await issuerjs.isAppliedTomoZ(
-            params.tokenAddress
-        )
-        .then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('issuer-check-apply-tomox')
-    .description('Get tokens that applied to tomox')
-    .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
-    .action(async (params) => {
-        await issuerjs.isAppliedTomoX(
-            params.tokenAddress
-        )
-        .then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-
-commander
-    .command('issuer-reissue-token')
-    .description('Reissue a token')
-    .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
-    .option('-r, --toAddress <toAddress>', 'Address that receives tokens')
-    .requiredOption('-a, --amount <amount>', 'Amount')
-    .action(async (params) => {
-        await issuerjs.reissueToken({
-            tokenAddress: params.tokenAddress,
-            amount: params.amount
+            if (params.yes) {
+                await tomojs.resign({
+                    node: params.node
+                }).then(data => {
+                    console.log(data)
+                }).catch(e => console.log(e.message ? e.message : e))
+            } else {
+                prompt(questions).then(async answers => {
+                    if (answers.answer === 'Yes') {
+                        await tomojs.resign({
+                            node: params.node
+                        }).then(data => {
+                            console.log(data)
+                        }).catch(e => console.log(e.message ? e.message : e))
+                    }
+                })
+            }
         })
-        .then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
 
-commander
-    .command('issuer-burn-token')
-    .description('Reissue a token')
-    .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
-    .requiredOption('-a, --amount <amount>', 'Amount')
-    .action(async (params) => {
-        await issuerjs.burnToken({
-            tokenAddress: params.tokenAddress,
-            amount: params.amount
+    commander
+        .command('get-withdraw-blocknumbers')
+        .description('show blocknumbers to withdraw TOMO after unstake/resign')
+        .action(async (params) => {
+            await tomojs.getWithdrawBlockNumbers()
+            .then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
         })
-        .then(data => {
-            console.log(data)
-        }).catch(e => console.log(e.message ? e.message : e))
-    })
-commander.parse(process.argv)
+
+    commander
+        .command('withdraw')
+        .description('withdraw TOMO with specify Blocknumber after unstake/resign')
+        .requiredOption('-b, --blockNumber <blockNumber>', 'Block number')
+        .requiredOption('-i, --index <index>', 'Block number index')
+        .action(async (params) => {
+            await tomojs.withdraw({
+                    blockNumber: params.blockNumber,
+                    index: params.index
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('withdraw-all')
+        .description('withdraw all available TOMO after unstake/resign')
+        .action(async (params) => {
+            await tomojs.withdrawAll()
+            .then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('get-balance')
+        .description('get user balance')
+        .option('-a, --address <address>', 'User Address')
+        .action(async (params) => {
+            await tomojs.getBalance(params)
+            .then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('get-candidate-status')
+        .description('get candidate status')
+        .option('-a, --address <address>', 'Candidate Coinbase')
+        .option('-e, --epoch <epoch>', 'Epoch Number')
+        .action(async (params) => {
+            await tomojs.getCandidateStatus(params)
+            .then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('send')
+        .description('send TOMO to another account')
+        .requiredOption('-a, --address <address>', 'Address Destionation')
+        .requiredOption('-v, --value <value>', 'Value')
+        .action(async (params) => {
+            await tomojs.send(params)
+            .then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('random-wallet')
+        .description('generate a random wallet')
+        .action(() => {
+            let wallet = tomojs.randomWallet()
+            console.log(wallet)
+        })
+
+    // TOMOX commands
+    commander
+        .command('relayer-register')
+        .description('resigter a relayer')
+        .option('-y, --yes', 'ignore question')
+        .requiredOption('-a, --amount <amount>', 'Deposit amount')
+        .requiredOption('-n, --node <node>', 'Node address')
+        .requiredOption('-f, --tradeFee <tradeFee>', 'Trade fee')
+        .requiredOption('-b, --baseTokens <baseTokens>', 'Base tokens')
+        .requiredOption('-q, --quoteTokens <quoteTokens>', 'Quote tokens')
+        .action(async (params) => {
+            const questions = [{
+                type : 'list',
+                name : 'answer',
+                message : 'This process cannot be undone. Do you want to continue?',
+                default: 'Yes',
+                choices: ['Yes', new Separator(), 'No']
+            }]
+
+            if (params.yes) {
+                await relayerjs.register({
+                    amount: params.amount,
+                    node: params.node,
+                    tradeFee: params.tradeFee,
+                    baseTokens: params.baseTokens,
+                    quoteTokens: params.quoteTokens
+                }).then(data => {
+                    console.log(data)
+                }).catch(e => console.log(e.message ? e.message : e))
+            } else {
+                prompt(questions).then(async answers => {
+                    if (answers.answer === 'Yes') {
+                        await relayerjs.register({
+                            amount: params.amount,
+                            node: params.node,
+                            tradeFee: params.tradeFee,
+                            baseTokens: params.baseTokens,
+                            quoteTokens: params.quoteTokens
+                        }).then(data => {
+                            console.log(data)
+                        }).catch(e => console.log(e.message ? e.message : e))
+                    }
+                })
+            }
+        })
+
+    commander
+        .command('relayer-update')
+        .description('update a relayer')
+        .requiredOption('-n, --node <node>', 'Node address')
+        .requiredOption('-f, --tradeFee <tradeFee>', 'Trade fee')
+        .requiredOption('-b, --baseTokens <baseTokens>', 'Base tokens')
+        .requiredOption('-q, --quoteTokens <quoteTokens>', 'Quote tokens')
+        .action(async (params) => {
+            await relayerjs.update({
+                    node: params.node,
+                    tradeFee: params.tradeFee,
+                    baseTokens: params.baseTokens,
+                    quoteTokens: params.quoteTokens
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('relayer-resign')
+        .description('resign a relayer')
+        .option('-y, --yes', 'ignore question')
+        .requiredOption('-n, --node <node>', 'Node address')
+        .action(async (params) => {
+            const questions = [{
+                type : 'list',
+                name : 'answer',
+                message : 'This process cannot be undone and your staked TOMO will be locked 30 days. Do you want to continue?',
+                default: 'Yes',
+                choices: ['Yes', new Separator(), 'No']
+            }]
+
+            if (params.yes) {
+                await relayerjs.resign({
+                    node: params.node
+                }).then(data => {
+                    console.log(data)
+                }).catch(e => console.log(e.message ? e.message : e))
+            } else {
+                prompt(questions).then(async answers => {
+                    if (answers.answer === 'Yes') {
+                        await relayerjs.resign({
+                            node: params.node
+                        }).then(data => {
+                            console.log(data)
+                        }).catch(e => console.log(e.message ? e.message : e))
+                    }
+                })
+            }
+        })
+
+    commander
+        .command('relayer-deposit')
+        .description('deposit to relayer')
+        .requiredOption('-a, --amount <amount>', 'Amount of TOMO')
+        .requiredOption('-n, --node <node>', 'Node address')
+        .action(async (params) => {
+            await relayerjs.deposit({
+                    amount: params.amount,
+                    node: params.node
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('transfer-relayer')
+        .description('transfer a relayer to new owner')
+        .requiredOption('-n, --node <node>', 'Node address')
+        .requiredOption('-o, --newOwner <newOwner>', 'New owner')
+        .action(async (params) => {
+            await relayerjs.transfer({
+                    node: params.node,
+                    newOwner: params.newOwner
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('relayer-withdraw')
+        .description('withdraw TOMO after 30 days of resigning a relayer')
+        .requiredOption('-n, --node <node>', 'Node address')
+        .action(async (params) => {
+            await relayerjs.withdraw({
+                    node: params.node
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    // Issuer
+    commander
+        .command('issuer-token')
+        .description('issue token')
+        .requiredOption('-n, --tokenName <tokenName>', 'Token name')
+        .requiredOption('-s, --tokenSymbol <tokenSymbol>', 'Token symbol')
+        .requiredOption('-t, --totalSupply <totalSupply>', 'Total supply')
+        .requiredOption('-d, --decimals <decimals>', 'Decimals')
+        .action(async (params) => {
+            await issuerjs.issueTRC21({
+                name: params.tokenName,
+                symbol: params.tokenSymbol,
+                totalSupply: params.totalSupply,
+                decimals: params.decimals
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('issuer-update-fee')
+        .description('update token transfer fee')
+        .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
+        .requiredOption('-f, --fee <fee>', 'New fee')
+        .action(async (params) => {
+            await issuerjs.updateFee({
+                tokenAddress: params.tokenAddress,
+                fee: params.fee
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('issuer-deposit-fee')
+        .description('deposit token pooling fee')
+        .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
+        .requiredOption('-a, --amount <amount>', 'Deposit amount')
+        .action(async (params) => {
+            await issuerjs.depositPoolingFee({
+                tokenAddress: params.tokenAddress,
+                amount: params.amount
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('issuer-apply-tomoz')
+        .description('deposit token pooling fee')
+        .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
+        .requiredOption('-a, --amount <amount>', 'Deposit amount')
+        .action(async (params) => {
+            await issuerjs.applyTomoZ({
+                tokenAddress: params.tokenAddress,
+                amount: params.amount
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('issuer-apply-tomox')
+        .description('deposit token pooling fee')
+        .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
+        .requiredOption('-a, --amount <amount>', 'Deposit amount')
+        .action(async (params) => {
+            await issuerjs.applyTomoX({
+                tokenAddress: params.tokenAddress,
+                amount: params.amount
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('issuer-tomoz-tokens')
+        .description('get tokens that applied to tomoz')
+        .action(async (params) => {
+            await issuerjs.getTokensTomoZ()
+            .then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('issuer-tomox-tokens')
+        .description('get tokens that applied to tomoz')
+        .action(async (params) => {
+            await issuerjs.getTokensTomoX()
+            .then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('issuer-check-apply-tomoz')
+        .description('get tokens that applied to tomoz')
+        .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
+        .action(async (params) => {
+            await issuerjs.isAppliedTomoZ(
+                params.tokenAddress
+            )
+            .then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('issuer-check-apply-tomox')
+        .description('get tokens that applied to tomox')
+        .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
+        .action(async (params) => {
+            await issuerjs.isAppliedTomoX(
+                params.tokenAddress
+            )
+            .then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('issuer-reissue-token')
+        .description('reissue a token')
+        .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
+        .option('-r, --toAddress <toAddress>', 'Address that receives tokens')
+        .requiredOption('-a, --amount <amount>', 'Amount')
+        .action(async (params) => {
+            await issuerjs.reissueToken({
+                tokenAddress: params.tokenAddress,
+                amount: params.amount
+            })
+            .then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('issuer-burn-token')
+        .description('reissue a token')
+        .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
+        .requiredOption('-a, --amount <amount>', 'Amount')
+        .action(async (params) => {
+            await issuerjs.burnToken({
+                tokenAddress: params.tokenAddress,
+                amount: params.amount
+            })
+            .then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+    commander.parse(process.argv)
+})
