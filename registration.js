@@ -6,13 +6,15 @@ const WebSocket = require('ws')
 const TomoJS = require('./validator')
 
 const RegistrationAbi = require('./abis/Registration.json')
+const LendingRegistrationAbi = require('./abis/LendingRegistration.json')
 
 class RelayerJS {
     constructor (
         endpoint = 'http://localhost:8545',
         pkey = '', // sample
         chainId = 88,
-        registrationAddress = '0xA1996F69f47ba14Cb7f661010A7C31974277958c'
+        registrationAddress = '0xA1996F69f47ba14Cb7f661010A7C31974277958c',
+        lendingAddress = '0xA1996F69f47ba14Cb7f661010A7C31974277958c'
     ) {
         this.gasLimit = 4000000
         this.endpoint = endpoint
@@ -36,6 +38,12 @@ class RelayerJS {
             RegistrationAbi.abi,
             this.wallet
         )
+
+        this.lendingContract = new ethers.Contract(
+            lendingAddress,
+            LendingRegistrationAbi.abi,
+            this.wallet
+        )
     }
 
     static setProvider(
@@ -45,7 +53,7 @@ class RelayerJS {
     ) {
         return TomoJS.networkInformation(endpoint).then((info) => {
             return new RelayerJS(
-                endpoint, pkey, info.NetworkId, info.RelayerRegistrationAddress
+                endpoint, pkey, info.NetworkId, info.RelayerRegistrationAddress, info.LendingAddress
             )
         }).catch((e) => {
             return new RelayerJs(
@@ -64,7 +72,9 @@ class RelayerJS {
                 return {}
             }
 
-            return {
+            const lending = await this.lendingContract.functions.getLendingRelayerByCoinbase(node)
+
+            const ret = {
                 index: new BigNumber(result[0]).toString(10),
                 coinbase: node,
                 owner: result[1],
@@ -74,6 +84,15 @@ class RelayerJS {
                 toTokens: result[5],
                 resign: new BigNumber(resign).toString(10)
             }
+
+            if (lending[1].length !== 0) {
+                ret.lendingTradeFee = lending[0]
+                ret.lendingTokens = lending[1]
+                ret.lendingTerms = lending[2]
+                ret.collateralTokens = lending[3]
+            }
+
+            return ret
         } catch (error) {
             throw error
         }
@@ -113,7 +132,7 @@ class RelayerJS {
         quoteTokens
     }) {
         try {
-            if (tradeFee < 1 || tradeFee > 1000) {
+            if (tradeFee < 0 || tradeFee > 1000) {
                 throw new Error('Trade fee must be from 1 to 1000')
             }
             const amountBN = new BigNumber(amount).multipliedBy(10 ** 18).toString(10)
@@ -152,8 +171,8 @@ class RelayerJS {
         quoteTokens
     }) {
         try {
-            if (tradeFee < 1 || tradeFee > 1000) {
-                throw new Error('Trade fee must be from 1 to 1000')
+            if (tradeFee < 0 || tradeFee > 1000) {
+                throw new Error('Trade fee must be from 0 to 1000')
             }
             const tradeFeeBN = ethers.utils.hexlify(ethers.utils.bigNumberify(tradeFee))
             const nonce = await this.provider.getTransactionCount(this.coinbase)
@@ -276,6 +295,46 @@ class RelayerJS {
             const result = await this.contract.functions.refund(node, txParams)
 
             return result
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async lendingUpdate ({
+        node,
+        tradeFee,
+        lendingTokens,
+        terms,
+        collateralTokens
+    }) {
+        try {
+            if (tradeFee < 0 || tradeFee > 1000) {
+                throw new Error('Trade fee must be from 0 to 1000')
+            }
+            const nonce = await this.provider.getTransactionCount(this.coinbase)
+            let txParams = {
+                value: 0,
+                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
+                chainId: this.chainId,
+                nonce
+            }
+
+            const checkCoinbase = await this.getRelayerByAddress(node)
+
+            if (checkCoinbase) {
+                const result = await this.lendingContract.functions.update(
+                    node,
+                    ethers.utils.hexlify(tradeFee),
+                    lendingTokens,
+                    terms,
+                    collateralTokens,
+                    txParams
+                )
+                return result
+            } else  {
+                throw new Error('This address is not a relayer coinbase')
+            }
         } catch (error) {
             throw error
         }
