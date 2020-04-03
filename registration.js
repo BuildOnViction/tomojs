@@ -339,6 +339,59 @@ class RelayerJS {
             throw error
         }
     }
+
+    async addILOCollateral ({
+        token, price
+    }) {
+        try {
+            const nonce = await this.provider.getTransactionCount(this.coinbase)
+            let txParams = {
+                value: 0,
+                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
+                chainId: this.chainId,
+                nonce
+            }
+
+            const result = await this.lendingContract.functions.setCollateralPrice(token, price, txParams)
+            return result
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async setCollateralPrice ({
+        token, price
+    }) {
+        try {
+            const nonce = await this.provider.getTransactionCount(this.coinbase)
+            let txParams = {
+                value: 0,
+                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
+                chainId: this.chainId,
+                nonce
+            }
+
+            const result = await this.lendingContract.functions.setCollateralPrice(token, price, txParams)
+            return result
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async getCollateral ({
+        address
+    }) {
+        try {
+            const result = await this.lendingContract.functions.COLLATERAL_LIST(address)
+            return result
+        } catch (error) {
+            throw error
+        }
+    }
+
+
 }
 
 module.exports = RelayerJS

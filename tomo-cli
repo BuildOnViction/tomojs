@@ -513,6 +513,32 @@ function run() {
             }).catch(e => console.log(e.message ? e.message : e))
         })
 
+    commander
+        .command('relayer-set-collateral-price')
+        .description('set collateral price')
+        .requiredOption('-t, --token <token>', 'token address')
+        .requiredOption('-p, --price <price>', 'token price')
+        .action(async (params) => {
+            await relayerjs.setCollateralPrice({
+                token: params.token,
+                price: params.price
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+    
+    commander
+        .command('relayer-get-collateral')
+        .description('get collateral detail')
+        .requiredOption('-t, --token <token>', 'token address')
+        .action(async (params) => {
+            await relayerjs.getCollateral({
+                address: params.token,
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
     // Issuer
     commander
         .command('issuer-token')
