@@ -61,7 +61,12 @@ class RelayerJS {
             if (result[1] === '0x0000000000000000000000000000000000000000') {
                 return false
             }
-            return result
+            return {
+                index: new BigNumber(result[0]).toString(10),
+                owner: result[1],
+                deposit: new BigNumber(result[2]).toString(10),
+                tradeFee: result[3]
+            }
         } catch (error) {
             throw error
         }
