@@ -80,8 +80,15 @@ commander
         )
     })
 
-commander.parseAsync(process.argv).then(() => {
+if (process.argv.indexOf('--help') < 0 && process.argv.indexOf('-h') < 0) {
+    commander.parseAsync(process.argv).then(() => {
+        run()
+    })
+} else {
+    run()
+}
 
+function run() {
     commander
         .command('init')
         .description('setup/init environment')
@@ -472,6 +479,15 @@ commander.parseAsync(process.argv).then(() => {
             }).catch(e => console.log(e.message ? e.message : e))
         })
 
+    commander
+        .command('relayer-list')
+        .description('list relayers')
+        .action(async () => {
+            await relayerjs.getListRelayers().then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
     // Issuer
     commander
         .command('issuer-token')
@@ -624,4 +640,4 @@ commander.parseAsync(process.argv).then(() => {
             }).catch(e => console.log(e.message ? e.message : e))
         })
     commander.parse(process.argv)
-})
+}

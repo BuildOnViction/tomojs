@@ -57,16 +57,47 @@ class RelayerJS {
 
     async getRelayerByAddress (node) {
         try {
+            const resign = await this.contract.functions.RESIGN_REQUESTS(node)
+
             const result = await this.contract.functions.getRelayerByCoinbase(node)
             if (result[1] === '0x0000000000000000000000000000000000000000') {
-                return false
+                return {}
             }
+
             return {
                 index: new BigNumber(result[0]).toString(10),
                 owner: result[1],
                 deposit: new BigNumber(result[2]).toString(10),
-                tradeFee: result[3]
+                tradeFee: result[3],
+                fromTokens: result[4],
+                toTokens: result[5],
+                resign: new BigNumber(resign).toString(10)
             }
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async getListRelayers () {
+        try {
+            const count = await this.contract.functions.RelayerCount()
+            let ret = []
+            for (let i = 0; i < count; i++) {
+                let coinbase = await this.contract.functions.RELAYER_COINBASES(i)
+                const result = await this.contract.functions.getRelayerByCoinbase(coinbase)
+                const resign = await this.contract.functions.RESIGN_REQUESTS(coinbase)
+
+                 ret.push({
+                    index: new BigNumber(result[0]).toString(10),
+                    owner: result[1],
+                    deposit: new BigNumber(result[2]).toString(10),
+                    tradeFee: result[3],
+                    fromTokens: result[4],
+                    toTokens: result[5],
+                    resign: new BigNumber(resign).toString(10)
+                })
+            }
+            return ret
         } catch (error) {
             throw error
         }
