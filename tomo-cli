@@ -553,11 +553,10 @@ function run() {
         .command('issuer-apply-tomox')
         .description('deposit token pooling fee')
         .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
-        .requiredOption('-a, --amount <amount>', 'Deposit amount')
         .action(async (params) => {
             await issuerjs.applyTomoX({
                 tokenAddress: params.tokenAddress,
-                amount: params.amount
+                amount: 1000
             }).then(data => {
                 console.log(data)
             }).catch(e => console.log(e.message ? e.message : e))

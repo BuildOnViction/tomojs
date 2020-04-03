@@ -300,12 +300,7 @@ class IssuerJS {
                     tokenAddress,
                     txParams
                 )
-                const receipt = await this.provider.getTransactionReceipt(result.hash || '')
-                if (receipt.status) {
-                    return result
-                } else {
-                    throw new Error('Something went wrong \n txHash: ' + result.hash || '')
-                }
+                return result
             }
         } catch (error) {
             throw error
@@ -338,13 +333,7 @@ class IssuerJS {
                     txParams
                 )
 
-                const receipt = await this.provider.getTransactionReceipt(result.hash || '')
-
-                if (receipt.status) {
-                    return result
-                } else {
-                    throw new Error('Something went wrong \n txHash: ' + result.hash || '')
-                }
+                return result
             }
         } catch (error) {
             throw error
