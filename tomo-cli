@@ -15,8 +15,14 @@ const ethers = require('ethers')
 const dotenv = require('dotenv')
 
 let configPath = path.resolve(process.cwd(), '.env')
-if (fs.existsSync(path.resolve(require('os').homedir(), '.tomojs'))) {
-    configPath = path.resolve(require('os').homedir(), '.tomojs')
+
+let profileDir = path.resolve(require('os').homedir(), '.tomocli')
+if (!fs.existsSync(profileDir)){
+    fs.mkdirSync(profileDir)
+}
+
+if (fs.existsSync(path.resolve(profileDir, 'config'))) {
+    configPath = path.resolve(path.resolve(profileDir, 'config'))
 }
 
 let tomojs = new TomoJS(
@@ -117,6 +123,7 @@ function run() {
             }
             prompt(questions).then(async answers => {
                 try {
+                    configPath = path.resolve(path.resolve(profileDir, 'config'))
                     let tomojsPath = path.resolve(configPath)
                     let address = ''
 
