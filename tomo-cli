@@ -48,7 +48,7 @@ function collectTerms(value, previous) {
 }   
 
 function parseTradeFee(value, previous) {
-    return parseInt(value) 
+    return parseFloat(value) 
 }       
             
 commander
@@ -343,7 +343,7 @@ function run() {
         .option('-y, --yes', 'ignore question')
         .requiredOption('-a, --amount <amount>', 'deposit amount')
         .requiredOption('-n, --node <node>', 'relayer coinbase address')
-        .requiredOption('-f, --tradeFee <tradeFee>', 'trade fee', parseTradeFee)
+        .requiredOption('-f, --tradeFee <tradeFee>', 'trade fee (%)', parseTradeFee)
         .requiredOption('-b, --baseTokens <baseTokens>', 'base tokens', collect, [])
         .requiredOption('-q, --quoteTokens <quoteTokens>', 'quote tokens', collect, [])
         .action(async (params) => {
@@ -385,9 +385,9 @@ function run() {
     commander
         .command('relayer-update')
         .description('update a relayer')
-        .requiredOption('-n, --node <node>', 'Node address')
-        .requiredOption('-f, --tradeFee <tradeFee>', 'Trade fee', parseTradeFee)
-        .requiredOption('-b, --baseTokens <baseTokens>', 'Base tokens', collect, [])
+        .requiredOption('-n, --node <node>', 'node address')
+        .requiredOption('-f, --tradeFee <tradeFee>', 'trade fee (%)', parseTradeFee)
+        .requiredOption('-b, --baseTokens <baseTokens>', 'base tokens', collect, [])
         .requiredOption('-q, --quoteTokens <quoteTokens>', 'Quote tokens', collect, [])
         .action(async (params) => {
             await relayerjs.update({
@@ -497,7 +497,7 @@ function run() {
         .command('relayer-lending-update')
         .description('add/update tomox lending pairs')
         .requiredOption('-n, --node <node>', 'relayer coinbase address')
-        .requiredOption('-f, --tradeFee <tradeFee>', 'trade fee', parseTradeFee)
+        .requiredOption('-f, --tradeFee <tradeFee>', 'trade fee (%)', parseTradeFee)
         .requiredOption('-l, --lendingTokens <lendingTokens>', 'lending tokens', collect, [])
         .requiredOption('-c, --collateralTokens <quoteTokens>', 'quote tokens', collect, [])
         .requiredOption('-t, --terms <terms>', 'terms', collectTerms, [])
@@ -522,6 +522,26 @@ function run() {
             await relayerjs.setCollateralPrice({
                 token: params.token,
                 price: params.price
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('relayer-add-ilo-collateral')
+        .description('add a ILO collateral')
+        .requiredOption('-t, --token <token>', 'token address')
+        .requiredOption('-d, --depositRate <depositRate>', 'deposit rate')
+        .requiredOption('-l, --liquidationRate <liquidationRate>', 'liquidation rate')
+        .requiredOption('-r, --recallRate <recallRate>', 'recall rate')
+        .requiredOption('-p, --price <price>', 'token price, if 0, get TomoX price')
+        .action(async (params) => {
+            await relayerjs.addILOCollateral({
+                token: params.token,
+                depositRate: params.depositRate,
+                liquidationRate: params.liquidationRate,
+                recallRate: params.recallRate,
+                price: params.price,
             }).then(data => {
                 console.log(data)
             }).catch(e => console.log(e.message ? e.message : e))

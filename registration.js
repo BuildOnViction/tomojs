@@ -79,16 +79,16 @@ class RelayerJS {
                 coinbase: node,
                 owner: result[1],
                 deposit: new BigNumber(result[2]).toString(10),
-                tradeFee: result[3],
+                tradeFee: result[3]/100,
                 fromTokens: result[4],
                 toTokens: result[5],
                 resign: new BigNumber(resign).toString(10)
             }
 
             if (lending[1].length !== 0) {
-                ret.lendingTradeFee = lending[0]
+                ret.lendingTradeFee = lending[0]/100
                 ret.lendingTokens = lending[1]
-                ret.lendingTerms = lending[2]
+                ret.lendingTerms = lending[2].map(t => new BigNumber(t).toString(10))
                 ret.collateralTokens = lending[3]
             }
 
@@ -112,7 +112,7 @@ class RelayerJS {
                     coinbase: coinbase,
                     owner: result[1],
                     deposit: new BigNumber(result[2]).toString(10),
-                    tradeFee: result[3],
+                    tradeFee: result[3]/100,
                     fromTokens: result[4],
                     toTokens: result[5],
                     resign: new BigNumber(resign).toString(10)
@@ -132,8 +132,9 @@ class RelayerJS {
         quoteTokens
     }) {
         try {
+            tradeFee = parseInt(tradeFee * 100)
             if (tradeFee < 0 || tradeFee > 1000) {
-                throw new Error('Trade fee must be from 1 to 1000')
+                throw new Error('Trade fee must be from 0 to 10')
             }
             const amountBN = new BigNumber(amount).multipliedBy(10 ** 18).toString(10)
             const nonce = await this.provider.getTransactionCount(this.coinbase)
@@ -171,8 +172,9 @@ class RelayerJS {
         quoteTokens
     }) {
         try {
+            tradeFee = parseInt(tradeFee * 100)
             if (tradeFee < 0 || tradeFee > 1000) {
-                throw new Error('Trade fee must be from 0 to 1000')
+                throw new Error('Trade fee must be from 0 to 10')
             }
             const tradeFeeBN = ethers.utils.hexlify(ethers.utils.bigNumberify(tradeFee))
             const nonce = await this.provider.getTransactionCount(this.coinbase)
@@ -308,8 +310,9 @@ class RelayerJS {
         collateralTokens
     }) {
         try {
+            tradeFee = parseInt(tradeFee * 100)
             if (tradeFee < 0 || tradeFee > 1000) {
-                throw new Error('Trade fee must be from 0 to 1000')
+                throw new Error('Trade fee must be from 0 to 10')
             }
             const nonce = await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
@@ -341,7 +344,7 @@ class RelayerJS {
     }
 
     async addILOCollateral ({
-        token, price
+        token, depositRate, liquidationRate, recallRate, price
     }) {
         try {
             const nonce = await this.provider.getTransactionCount(this.coinbase)
@@ -353,7 +356,10 @@ class RelayerJS {
                 nonce
             }
 
-            const result = await this.lendingContract.functions.setCollateralPrice(token, price, txParams)
+            const result = await this.lendingContract.functions.addILOCollateral(
+                token, depositRate, liquidationRate, recallRate, price, txParams
+            )
+
             return result
         } catch (error) {
             throw error
@@ -385,7 +391,14 @@ class RelayerJS {
     }) {
         try {
             const result = await this.lendingContract.functions.COLLATERAL_LIST(address)
-            return result
+            const ret = {
+                depositRate: new BigNumber(result[0]).toString(10),
+                liquidationRate: new BigNumber(result[1]).toString(10),
+                recallRate: new BigNumber(result[2]).toString(10),
+                price: new BigNumber(result[3]).toString(10),
+                blockNumber: new BigNumber(result[4]).toString(10)
+            }
+            return ret
         } catch (error) {
             throw error
         }
