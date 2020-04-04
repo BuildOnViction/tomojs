@@ -19,8 +19,6 @@ if (fs.existsSync(path.resolve(require('os').homedir(), '.tomojs'))) {
     configPath = path.resolve(require('os').homedir(), '.tomojs')
 }
 
-dotenv.config({ path: configPath })
-
 let tomojs = new TomoJS(
     process.env.ENDPOINT,
     process.env.USER_PKEY,
