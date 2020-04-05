@@ -393,13 +393,47 @@ function run() {
         .requiredOption('-n, --node <node>', 'node address')
         .requiredOption('-f, --tradeFee <tradeFee>', 'trade fee (%)', parseTradeFee)
         .requiredOption('-b, --baseTokens <baseTokens>', 'base tokens', collect, [])
-        .requiredOption('-q, --quoteTokens <quoteTokens>', 'Quote tokens', collect, [])
+        .requiredOption('-q, --quoteTokens <quoteTokens>', 'quote tokens', collect, [])
         .action(async (params) => {
             await relayerjs.update({
                     node: params.node,
                     tradeFee: params.tradeFee,
                     baseTokens: params.baseTokens,
                     quoteTokens: params.quoteTokens
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('relayer-list-token')
+        .description('list a new pair')
+        .requiredOption('-n, --node <node>', 'node address')
+        .requiredOption('-b, --baseToken <baseToken>', 'base token')
+        .requiredOption('-q, --quoteToken <quoteToken>', 'quote token')
+        .action(async (params) => {
+            await relayerjs.list({
+                    node: params.node,
+                    tradeFee: params.tradeFee,
+                    baseToken: params.baseToken,
+                    quoteToken: params.quoteToken
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('relayer-delist-token')
+        .description('delist a pair')
+        .requiredOption('-n, --node <node>', 'node address')
+        .requiredOption('-b, --baseToken <baseToken>', 'base token')
+        .requiredOption('-q, --quoteToken <quoteToken>', 'quote token')
+        .action(async (params) => {
+            await relayerjs.delist({
+                    node: params.node,
+                    tradeFee: params.tradeFee,
+                    baseToken: params.baseToken,
+                    quoteToken: params.quoteToken
             }).then(data => {
                 console.log(data)
             }).catch(e => console.log(e.message ? e.message : e))

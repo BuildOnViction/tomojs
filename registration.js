@@ -16,7 +16,7 @@ class RelayerJS {
         registrationAddress = '0xA1996F69f47ba14Cb7f661010A7C31974277958c',
         lendingAddress = '0xA1996F69f47ba14Cb7f661010A7C31974277958c'
     ) {
-        this.gasLimit = 4000000
+        this.gasLimit = 40000000
         this.endpoint = endpoint
         this.chainId = chainId ? Number(chainId) : (this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89)
         if (!pkey) {
@@ -297,6 +297,72 @@ class RelayerJS {
             const result = await this.contract.functions.refund(node, txParams)
 
             return result
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async list ({
+        node,
+        baseToken,
+        quoteToken
+    }) {
+        try {
+            const nonce = await this.provider.getTransactionCount(this.coinbase)
+            let txParams = {
+                value: 0,
+                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
+                chainId: this.chainId,
+                nonce
+            }
+
+            const checkCoinbase = await this.getRelayerByAddress(node)
+
+            if (checkCoinbase) {
+                const result = await this.contract.functions.listToken(
+                    node,
+                    baseToken,
+                    quoteToken,
+                    txParams
+                )
+                return result
+            } else {
+                throw new Error('Wrong coinbase')
+            }
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async delist ({
+        node,
+        baseToken,
+        quoteToken
+    }) {
+        try {
+            const nonce = await this.provider.getTransactionCount(this.coinbase)
+            let txParams = {
+                value: 0,
+                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
+                chainId: this.chainId,
+                nonce
+            }
+
+            const checkCoinbase = await this.getRelayerByAddress(node)
+
+            if (checkCoinbase) {
+                const result = await this.contract.functions.deListToken(
+                    node,
+                    baseToken,
+                    quoteToken,
+                    txParams
+                )
+                return result
+            } else {
+                throw new Error('Wrong coinbase')
+            }
         } catch (error) {
             throw error
         }
