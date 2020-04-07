@@ -16,7 +16,7 @@ class RelayerJS {
         registrationAddress = '0xA1996F69f47ba14Cb7f661010A7C31974277958c',
         lendingAddress = '0xA1996F69f47ba14Cb7f661010A7C31974277958c'
     ) {
-        this.gasLimit = 40000000
+        this.gasLimit = 4000000
         this.endpoint = endpoint
         this.chainId = chainId ? Number(chainId) : (this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89)
         if (!pkey) {
