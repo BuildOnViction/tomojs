@@ -414,6 +414,54 @@ class IssuerJS {
             throw error
         }
     }
+
+    async balanceOf({ tokenAddress , userAddress }) {
+        try {
+            const abi = getABI()
+
+            const contract = new ethers.Contract(
+                tokenAddress,
+                await abi,
+                this.wallet
+            )
+
+            const decimals = await contract.functions.decimals()
+            const balance = await contract.functions.balanceOf(userAddress)
+
+            return {
+                balance: (new BigNumber(balance).dividedBy(10 ** decimals)).toString(10)
+            }
+
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async getTokenInformation({ tokenAddress }) {
+        try {
+            const abi = getABI()
+
+            const contract = new ethers.Contract(
+                tokenAddress,
+                await abi,
+                this.wallet
+            )
+
+            const decimals = await contract.functions.decimals()
+            const name = await contract.functions.name()
+            const symbol = await contract.functions.symbol()
+            let totalSupply = await contract.functions.totalSupply()
+            totalSupply = (new BigNumber(totalSupply).dividedBy(10 ** decimals)).toString(10)
+
+            return {
+                name,
+                symbol,
+                decimals
+            }
+        } catch (error) {
+            throw error
+        }
+    }
 }
 
 module.exports = IssuerJS

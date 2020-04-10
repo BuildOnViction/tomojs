@@ -737,8 +737,8 @@ function run() {
     commander
         .command('issuer-burn-token')
         .description('reissue a token')
-        .requiredOption('-t, --tokenAddress <tokenAddress>', 'Token address')
-        .requiredOption('-a, --amount <amount>', 'Amount')
+        .requiredOption('-t, --tokenAddress <tokenAddress>', 'token address')
+        .requiredOption('-a, --amount <amount>', 'amount')
         .action(async (params) => {
             await issuerjs.burnToken({
                 tokenAddress: params.tokenAddress,
@@ -748,5 +748,34 @@ function run() {
                 console.log(data)
             }).catch(e => console.log(e.message ? e.message : e))
         })
+
+    commander
+        .command('issuer-balance-of')
+        .description('get token balance')
+        .requiredOption('-t, --tokenAddress <tokenAddress>', 'token address')
+        .requiredOption('-u, --userAddress <userAddress>', 'user address')
+        .action(async (params) => {
+            await issuerjs.balanceOf({
+                tokenAddress: params.tokenAddress,
+                userAddress: params.userAddress
+            })
+            .then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
+        .command('issuer-token-info')
+        .description('get token information')
+        .requiredOption('-t, --tokenAddress <tokenAddress>', 'token address')
+        .action(async (params) => {
+            await issuerjs.getTokenInformation({
+                tokenAddress: params.tokenAddress
+            })
+            .then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
     commander.parse(process.argv)
 }
