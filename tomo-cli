@@ -556,10 +556,12 @@ function run() {
         .command('relayer-set-collateral-price')
         .description('set collateral price')
         .requiredOption('-t, --token <token>', 'token address')
+        .requiredOption('-l, --lendingToken <lendingToken>', 'lending token address')
         .requiredOption('-p, --price <price>', 'token price')
         .action(async (params) => {
             await relayerjs.setCollateralPrice({
                 token: params.token,
+                lendingToken: params.lendingToken,
                 price: params.price
             }).then(data => {
                 console.log(data)

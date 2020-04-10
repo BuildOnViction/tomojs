@@ -423,7 +423,7 @@ class RelayerJS {
             }
 
             const result = await this.lendingContract.functions.addILOCollateral(
-                token, depositRate, liquidationRate, recallRate, price, txParams
+                token, depositRate, liquidationRate, recallRate, txParams
             )
 
             return result
@@ -433,7 +433,7 @@ class RelayerJS {
     }
 
     async setCollateralPrice ({
-        token, price
+        token, lendingToken, price
     }) {
         try {
             const nonce = await this.provider.getTransactionCount(this.coinbase)
@@ -445,7 +445,7 @@ class RelayerJS {
                 nonce
             }
 
-            const result = await this.lendingContract.functions.setCollateralPrice(token, price, txParams)
+            const result = await this.lendingContract.functions.setCollateralPrice(token, lendingToken, price, txParams)
             return result
         } catch (error) {
             throw error
