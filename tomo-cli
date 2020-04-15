@@ -752,7 +752,7 @@ function run() {
         })
 
     commander
-        .command('issuer-balance-of')
+        .command('token-balance-of')
         .description('get token balance')
         .requiredOption('-t, --tokenAddress <tokenAddress>', 'token address')
         .requiredOption('-u, --userAddress <userAddress>', 'user address')
@@ -767,7 +767,7 @@ function run() {
         })
 
     commander
-        .command('issuer-token-info')
+        .command('token-info')
         .description('get token information')
         .requiredOption('-t, --tokenAddress <tokenAddress>', 'token address')
         .action(async (params) => {
