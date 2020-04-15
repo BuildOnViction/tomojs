@@ -56,7 +56,7 @@ class RelayerJS {
                 endpoint, pkey, info.NetworkId, info.RelayerRegistrationAddress, info.LendingAddress
             )
         }).catch((e) => {
-            return new RelayerJs(
+            return new RelayerJS(
                 endpoint, pkey, chainId
             )
         })
