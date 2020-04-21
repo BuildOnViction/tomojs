@@ -277,7 +277,7 @@ class TomoJS {
         })
     }
 
-    randomWallet() {
+    static randomWallet() {
         let randomWallet = ethers.Wallet.createRandom()
         let privateKey = randomWallet.privateKey
         let address = randomWallet.address
@@ -295,7 +295,7 @@ class TomoJS {
                     id: 1
                 }
 
-                let url = urljoin(endpoint)
+                let url = urljoin(endpoint || this.endpoint)
                 let options = {
                     method: 'POST',
                     url: url,
