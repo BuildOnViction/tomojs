@@ -5,8 +5,12 @@ const urljoin = require('url-join');
 const BigNumber = require('bignumber.js')
 const WebSocket = require('ws')
 const TomoValidatorAbi = require('./abis/TomoValidator.json')
+const TomoX = require('./tomox')
+const TomoZ = require('./tomoz')
 
 const validatorAddress = '0x0000000000000000000000000000000000000088'
+
+let network = {}
 
 class TomoJS {
     constructor (
@@ -38,6 +42,8 @@ class TomoJS {
         )
 
         this.utils = ethers.utils
+        this.tomox = new TomoX(this.endpoint, pkey, chainId, network.RelayerRegistrationAddress, network.LendingAddress)
+        this.tomoz = new TomoZ(this.endpoint, pkey, chainId, network.TomoZAddress, network.TomoXListingAddress)
     }
 
     static setProvider(
@@ -46,6 +52,7 @@ class TomoJS {
         chainId = 88
     ) {
         return TomoJS.networkInformation(endpoint).then((info) => {
+            network = info
             return new TomoJS(
                 endpoint, pkey, info.NetworkId
             )

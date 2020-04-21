@@ -6,7 +6,6 @@ const WebSocket = require('ws')
 const path = require('path')
 const fs = require('fs')
 const solc = require('solc')
-const TomoJS = require('./validator')
 
 const IssuerAbi = require('./abis/TRC21Issuer.json')
 const TomoXListingAbi = require('./abis/TOMOXListing.json')
@@ -49,7 +48,7 @@ async function getABI (isMintable = true) {
     }
 }
 
-class IssuerJS {
+class TomoZ {
     constructor (
         endpoint = 'http://localhost:8545',
         pkey = '', // sample
@@ -84,22 +83,6 @@ class IssuerJS {
             TomoXListingAbi.abi,
             this.wallet
         )
-    }
-
-    static setProvider(
-        endpoint = 'http://localhost:8545',
-        pkey = '',
-        chainId = 88
-    ) {
-        return TomoJS.networkInformation(endpoint).then((info) => {
-            return new IssuerJS(
-                endpoint, pkey, info.NetworkId, info.TomoZAddress, info.TomoXListingAddress
-            )
-        }).catch((e) => {
-            return new IssuerJS(
-                endpoint, pkey, chainId
-            )
-        })
     }
 
     async issueTRC21 ({
@@ -464,4 +447,4 @@ class IssuerJS {
     }
 }
 
-module.exports = IssuerJS
+module.exports = TomoZ

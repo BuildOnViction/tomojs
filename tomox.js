@@ -3,12 +3,11 @@ const request = require('request')
 const urljoin = require('url-join');
 const BigNumber = require('bignumber.js')
 const WebSocket = require('ws')
-const TomoJS = require('./validator')
 
 const RegistrationAbi = require('./abis/Registration.json')
 const LendingRegistrationAbi = require('./abis/LendingRegistration.json')
 
-class RelayerJS {
+class TomoX {
     constructor (
         endpoint = 'http://localhost:8545',
         pkey = '', // sample
@@ -45,23 +44,6 @@ class RelayerJS {
             this.wallet
         )
     }
-
-    static setProvider(
-        endpoint = 'http://localhost:8545',
-        pkey = '',
-        chainId = 88
-    ) {
-        return TomoJS.networkInformation(endpoint).then((info) => {
-            return new RelayerJS(
-                endpoint, pkey, info.NetworkId, info.RelayerRegistrationAddress, info.LendingAddress
-            )
-        }).catch((e) => {
-            return new RelayerJS(
-                endpoint, pkey, chainId
-            )
-        })
-    }
-
 
     async getRelayerByAddress (node) {
         try {
@@ -473,4 +455,4 @@ class RelayerJS {
 
 }
 
-module.exports = RelayerJS
+module.exports = TomoX
