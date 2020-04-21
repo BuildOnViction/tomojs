@@ -319,6 +319,44 @@ class TomoJS {
             }
         })
     }
+
+    getTransactionReceipt ({ hash }) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = { 
+                    jsonrpc: '2.0',
+                    method: 'eth_getTransactionReceipt',
+                    params: [ hash ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
 }
 
 module.exports = TomoJS

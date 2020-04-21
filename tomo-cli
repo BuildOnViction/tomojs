@@ -779,5 +779,18 @@ function run() {
             }).catch(e => console.log(e.message ? e.message : e))
         })
 
+    commander
+        .command('tx-receipt')
+        .description('get tx recepit')
+        .requiredOption('-H, --hash <hash>', 'tx hash')
+        .action(async (params) => {
+            await tomojs.getTransactionReceipt({
+                hash: params.hash
+            })
+            .then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
     commander.parse(process.argv)
 }
