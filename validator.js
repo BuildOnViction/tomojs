@@ -256,8 +256,24 @@ class TomoJS {
         })
     }
 
-    send({ address, value }) {
+    send({ address, value, nonce }) {
         return new Promise(async (resolve, reject) => {
+            let tx = {
+                nonce: nonce,
+                gasLimit: 21000,
+                gasPrice: ethers.utils.bigNumberify('250000000'),
+                to: address,
+                value: ethers.utils.parseEther(value),
+                data: '0x',
+                chainId: this.chainId
+            }
+            if (tx.nonce) {
+                return this.wallet.sendTransaction(tx).then(tx => {
+                    return resolve(tx)
+                }).catch(e => {
+                    return reject(e)
+                })
+            }
 			return this.wallet.getTransactionCount().then(count => {
 				let tx = {
 					nonce: count,
