@@ -36,6 +36,8 @@ class TomoJS {
             TomoValidatorAbi.abi,
             this.wallet
         )
+
+        this.utils = ethers.utils
     }
 
     static setProvider(
