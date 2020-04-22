@@ -3,43 +3,46 @@ const request = require('request')
 const urljoin = require('url-join');
 const BigNumber = require('bignumber.js')
 const WebSocket = require('ws')
+const TomoZ = require('./tomoz')
 
 const RegistrationAbi = require('./abis/Registration.json')
 const LendingRegistrationAbi = require('./abis/LendingRegistration.json')
 
 class TomoX {
-    constructor (
-        endpoint = 'http://localhost:8545',
-        pkey = '', // sample
-        chainId = 88,
-        registrationAddress = '0xA1996F69f47ba14Cb7f661010A7C31974277958c',
-        lendingAddress = '0xA1996F69f47ba14Cb7f661010A7C31974277958c'
-    ) {
+    /*
+        endpoint,
+        pkey,
+        chainId,
+        registrationAddress,
+        lendingAddress 
+        */
+    constructor (network) {
         this.gasLimit = 4000000
-        this.endpoint = endpoint
-        this.chainId = chainId ? Number(chainId) : (this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89)
-        if (!pkey) {
+        this.network = network
+        this.endpoint = network.endpoint
+        this.chainId = network.chainId ? Number(network.chainId) : (this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89)
+        if (!network.pkey) {
             let randomWallet = ethers.Wallet.createRandom()
-            pkey = randomWallet.privateKey
+            network.pkey = randomWallet.privateKey
         }
         
-        if (endpoint.endsWith('.ipc')) {
-            this.provider = new ethers.providers.IpcProvider(endpoint)
+        if (network.endpoint.endsWith('.ipc')) {
+            this.provider = new ethers.providers.IpcProvider(network.endpoint)
         } else {
-            this.provider = new ethers.providers.JsonRpcProvider(endpoint)
+            this.provider = new ethers.providers.JsonRpcProvider(network.endpoint)
         }
 
-        this.wallet = new ethers.Wallet(pkey, this.provider)
+        this.wallet = new ethers.Wallet(network.pkey, this.provider)
         this.coinbase = this.wallet.address
 
         this.contract = new ethers.Contract(
-            registrationAddress,
+            network.registrationAddress || '0x33aeac1209a4dd857833026d2f60d149e740fc7d',
             RegistrationAbi.abi,
             this.wallet
         )
 
         this.lendingContract = new ethers.Contract(
-            lendingAddress,
+            network.lendingAddress || '0xbd8b2fb871f97b2d5f0a1af3bf73619b09174b2a',
             LendingRegistrationAbi.abi,
             this.wallet
         )
@@ -452,6 +455,178 @@ class TomoX {
         }
     }
 
+    async getOrderCount (address) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_getOrderCount',
+                    params: [ address || this.coinbase ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
+
+	getOrderHash(order) {
+		if (order.type === 'MO') {
+			return ethers.utils.solidityKeccak256(
+				[
+					'bytes',
+					'bytes',
+					'bytes',
+					'bytes',
+					'uint256',
+					'uint256',
+					'string',
+					'string',
+					'uint256',
+				],
+				[
+					order.exchangeAddress,
+					order.userAddress,
+					order.baseToken,
+					order.quoteToken,
+					order.quantity,
+					order.side === 'BUY' ? '0' : '1',
+					order.status,
+					order.type,
+					order.nonce
+				],
+			)
+		}
+		return ethers.utils.solidityKeccak256(
+			[
+				'bytes',
+				'bytes',
+				'bytes',
+				'bytes',
+				'uint256',
+				'uint256',
+				'uint256',
+				'string',
+				'string',
+				'uint256',
+			],
+			[
+				order.exchangeAddress,
+				order.userAddress,
+				order.baseToken,
+				order.quoteToken,
+                order.quantity,
+				order.price,
+				order.side === 'BUY' ? '0' : '1',
+				order.status,
+				order.type,
+				order.nonce
+			],
+		)
+	}
+
+    bigToHex(b) {
+        return '0x' + (new BigNumber(b)).toString(16)
+    }
+
+
+    async createOrder (order) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                let nonce = order.nonce || await this.getOrderCount()
+                let o = {
+                    userAddress: this.coinbase,
+                    exchangeAddress: order.exchangeAddress,
+                    baseToken: order.baseToken,
+                    quoteToken: order.quoteToken,
+                    side: order.side || 'BUY',
+                    type: order.type || 'LO',
+                    status: 'NEW'
+                }
+
+                let tomoz = new TomoZ(this.network)
+           
+                let baseToken = await tomoz.getTokenInformation({ tokenAddress: order.baseToken })
+                let quoteToken = await tomoz.getTokenInformation({ tokenAddress: order.quoteToken })
+
+                if (!baseToken || !quoteToken) {
+                    return reject(Error('Can not get token info'))
+                }
+
+                if (o.type !== 'MO') {
+                    o.price = this.bigToHex(new BigNumber(order.price).multipliedBy(10 ** quoteToken.decimals))
+                }
+                o.quantity = this.bigToHex(new BigNumber(order.amount)
+                    .multipliedBy(10 ** baseToken.decimals))
+
+                o.nonce = this.bigToHex(nonce)
+                o.hash = this.getOrderHash(o)
+
+                let signature = await this.wallet.signMessage(ethers.utils.arrayify(o.hash))
+                let { r, s, v } = ethers.utils.splitSignature(signature)
+                o.r = r
+                o.s = s
+                o.v = this.bigToHex(v)
+
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_sendOrder',
+                    params: [ o ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+
+
+    }
 
 }
 

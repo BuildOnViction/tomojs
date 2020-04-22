@@ -42,8 +42,11 @@ class TomoJS {
         )
 
         this.utils = ethers.utils
-        this.tomox = new TomoX(this.endpoint, pkey, chainId, network.RelayerRegistrationAddress, network.LendingAddress)
-        this.tomoz = new TomoZ(this.endpoint, pkey, chainId, network.TomoZAddress, network.TomoXListingAddress)
+        network.endpoint = this.endpoint
+        network.pkey = pkey
+        network.chainId = chainId
+        this.tomox = new TomoX(network)
+        this.tomoz = new TomoZ(network)
     }
 
     static setProvider(
@@ -218,7 +221,7 @@ class TomoJS {
         }
     }
 
-    async getBalance ({ address }) {
+    async getBalance (address) {
         let balance = await this.provider.getBalance(address || this.coinbase)
         return ethers.utils.formatEther(balance)
     }

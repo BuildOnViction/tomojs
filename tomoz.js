@@ -49,13 +49,13 @@ async function getABI (isMintable = true) {
 }
 
 class TomoZ {
-    constructor (
-        endpoint = 'http://localhost:8545',
-        pkey = '', // sample
-        chainId = 88,
-        issuerAddress = '0x0E2C88753131CE01c7551B726b28BFD04e44003F',
-        tomoXAddress = '0x14B2Bf043b9c31827A472CE4F94294fE9a6277e0'
-    ) {
+    constructor ({
+        endpoint,
+        pkey,
+        chainId,
+        issuerAddress,
+        tomoXAddress,
+    }) {
         this.gasLimit = 2000000
         this.endpoint = endpoint
         this.chainId = chainId ? Number(chainId) : (this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89)
@@ -74,12 +74,12 @@ class TomoZ {
         this.coinbase = this.wallet.address
 
         this.issuerContract = new ethers.Contract(
-            issuerAddress,
+            issuerAddress || '0xc44ac3e7ea0f6471da752886209c76c4ebffd1fb',
             IssuerAbi.abi,
             this.wallet
         )
         this.tomoXContract = new ethers.Contract(
-            tomoXAddress,
+            tomoXAddress || '0x6cac761fe6c31e3ecab1121b00bfa708d72d85ce',
             TomoXListingAbi.abi,
             this.wallet
         )
@@ -422,6 +422,14 @@ class TomoZ {
 
     async getTokenInformation({ tokenAddress }) {
         try {
+            if (tokenAddress === '0x0000000000000000000000000000000000000001') {
+                return {
+                    name: 'TomoChain',
+                    symbol: 'TOMO',
+                    decimals: 18,
+                    totalSupply: '100000000'
+                }
+            }
             const abi = getABI()
 
             const contract = new ethers.Contract(
@@ -439,7 +447,8 @@ class TomoZ {
             return {
                 name,
                 symbol,
-                decimals
+                decimals,
+                totalSupply
             }
         } catch (error) {
             throw error

@@ -277,7 +277,7 @@ function run() {
         .description('get user balance')
         .option('-a, --address <address>', 'User Address')
         .action(async (params) => {
-            await tomojs.getBalance(params)
+            await tomojs.getBalance(params.address)
             .then(data => {
                 console.log(data)
             }).catch(e => console.log(e.message ? e.message : e))
