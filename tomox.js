@@ -83,6 +83,22 @@ class TomoX {
         }
     }
 
+    async checkRelayerByAddress (node) {
+        try {
+            let b = false
+            const resign = await this.contract.functions.RESIGN_REQUESTS(node)
+            b = b || !((new BigNumber(resign)).toString(10) === '0')
+
+            const result = await this.contract.functions.getRelayerByCoinbase(node)
+            if (result[1] !== '0x0000000000000000000000000000000000000000') {
+                b = true
+            }
+            return b
+        } catch (error) {
+            return false
+        }
+    }
+
     async getListRelayers () {
         try {
             const count = await this.contract.functions.RelayerCount()
@@ -114,7 +130,8 @@ class TomoX {
         node,
         tradeFee,
         baseTokens,
-        quoteTokens
+        quoteTokens,
+        nonce
     }) {
         try {
             tradeFee = parseInt(tradeFee * 100)
@@ -122,7 +139,7 @@ class TomoX {
                 throw new Error('Trade fee must be from 0 to 10')
             }
             const amountBN = new BigNumber(amount).multipliedBy(10 ** 18).toString(10)
-            const nonce = await this.provider.getTransactionCount(this.coinbase)
+            nonce = nonce || await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
                 value: ethers.utils.hexlify(ethers.utils.bigNumberify(amountBN)),
                 gasPrice: ethers.utils.hexlify(250000000000000),
@@ -131,7 +148,7 @@ class TomoX {
                 nonce
             }
 
-            const checkCoinbase = await this.getRelayerByAddress(node)
+            const checkCoinbase = await this.checkRelayerByAddress(node)
 
             if (!checkCoinbase) {
                 const result = await this.contract.functions.register(
@@ -154,7 +171,8 @@ class TomoX {
         node,
         tradeFee,
         baseTokens,
-        quoteTokens
+        quoteTokens,
+        nonce
     }) {
         try {
             tradeFee = parseInt(tradeFee * 100)
@@ -162,7 +180,7 @@ class TomoX {
                 throw new Error('Trade fee must be from 0 to 10')
             }
             const tradeFeeBN = ethers.utils.hexlify(ethers.utils.bigNumberify(tradeFee))
-            const nonce = await this.provider.getTransactionCount(this.coinbase)
+            nonce = await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
                 gasPrice: ethers.utils.hexlify(250000000000000),
                 gasLimit: ethers.utils.hexlify(this.gasLimit),
@@ -170,7 +188,7 @@ class TomoX {
                 nonce
             }
 
-            const checkCoinbase = await this.getRelayerByAddress(node)
+            const checkCoinbase = await this.checRelayerByAddress(node)
 
             if (checkCoinbase) {
                 const result = await this.contract.functions.update(
@@ -199,7 +217,7 @@ class TomoX {
                 nonce
             }
 
-            const checkCoinbase = await this.getRelayerByAddress(node)
+            const checkCoinbase = await this.checkRelayerByAddress(node)
             if (checkCoinbase) {
                 const result = await this.contract.functions.resign(node, txParams)
                 return result
@@ -224,7 +242,7 @@ class TomoX {
                 nonce
             }
 
-            const checkCoinbase = await this.getRelayerByAddress(node)
+            const checkCoinbase = await this.checRelayerByAddress(node)
 
             if (checkCoinbase) {
                 const result = await this.contract.functions.depositMore(
@@ -290,10 +308,11 @@ class TomoX {
     async list ({
         node,
         baseToken,
-        quoteToken
+        quoteToken,
+        nonce
     }) {
         try {
-            const nonce = await this.provider.getTransactionCount(this.coinbase)
+            nonce = nonce || await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
                 value: 0,
                 gasPrice: ethers.utils.hexlify(250000000000000),
@@ -302,7 +321,7 @@ class TomoX {
                 nonce
             }
 
-            const checkCoinbase = await this.getRelayerByAddress(node)
+            const checkCoinbase = await this.checkRelayerByAddress(node)
 
             if (checkCoinbase) {
                 const result = await this.contract.functions.listToken(
@@ -335,7 +354,7 @@ class TomoX {
                 nonce
             }
 
-            const checkCoinbase = await this.getRelayerByAddress(node)
+            const checkCoinbase = await this.checkRelayerByAddress(node)
 
             if (checkCoinbase) {
                 const result = await this.contract.functions.deListToken(
@@ -374,7 +393,7 @@ class TomoX {
                 nonce
             }
 
-            const checkCoinbase = await this.getRelayerByAddress(node)
+            const checkCoinbase = await this.checkRelayerByAddress(node)
 
             if (checkCoinbase) {
                 const result = await this.lendingContract.functions.update(
