@@ -89,7 +89,8 @@ class TomoZ {
         name,
         symbol,
         totalSupply,
-        decimals
+        decimals,
+        nonce
     }) {
         try {
             console.log('Creating contract...')
@@ -112,12 +113,12 @@ class TomoZ {
                 trcContract.bytecode,
                 this.wallet
             )
-            const nonce = this.provider.getTransactionCount(this.coinbase)
+            nonce = nonce || await this.provider.getTransactionCount(this.coinbase)
             const txParams = {
                 gasLimit: ethers.utils.hexlify(this.gasLimit),
                 gasPrice: ethers.utils.hexlify(10000000000000),
                 chainId: this.chainId,
-                nonce: await nonce
+                nonce: nonce
             }
             const contract = await factory.deploy(
                 name,
@@ -290,7 +291,7 @@ class TomoZ {
         }
     }
 
-    async applyTomoX ({ tokenAddress, amount }) {
+    async applyTomoX ({ tokenAddress, amount, nonce }) {
         try {
             if (amount < 1000) {
                 throw new Error('You need to pay 1000 TOMO as TomoX protocol listing fee')
@@ -301,14 +302,14 @@ class TomoZ {
                 throw new Error('This token have already applied to TomoX')
             } else {
                 const depAmountBN = new BigNumber(amount).multipliedBy(10 ** 18).toString(10)
-                const nonce = this.provider.getTransactionCount(this.coinbase)
+                nonce = nonce || this.provider.getTransactionCount(this.coinbase)
                 const gasPrice = this.provider.getGasPrice()
                 const txParams = {
                     value: ethers.utils.hexlify(ethers.utils.bigNumberify(depAmountBN)),
                     gasLimit: ethers.utils.hexlify(this.gasLimit),
                     gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(await gasPrice)),
                     chainId: this.chainId,
-                    nonce: await nonce
+                    nonce: nonce
                 }
 
                 const result = await this.tomoXContract.functions.apply(
@@ -409,11 +410,44 @@ class TomoZ {
             )
 
             const decimals = await contract.functions.decimals()
-            const balance = await contract.functions.balanceOf(userAddress)
+            const balance = await contract.functions.balanceOf(userAddress || this.coinbase)
 
             return {
                 balance: (new BigNumber(balance).dividedBy(10 ** decimals)).toString(10)
             }
+
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async transfer({ tokenAddress, to, amount, nonce }) {
+        try {
+            const abi = getABI()
+
+            const contract = new ethers.Contract(
+                tokenAddress,
+                await abi,
+                this.wallet
+            )
+
+            const decimals = await contract.functions.decimals()
+            const amountBN = new BigNumber(amount).multipliedBy(10 ** decimals).toString(10)
+            nonce = nonce || await this.provider.getTransactionCount(this.coinbase)
+            let txParams = {
+                value: 0,
+                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
+                chainId: this.chainId,
+                nonce
+            }
+
+            const result = await contract.functions.transfer(
+                to,
+                ethers.utils.hexlify(ethers.utils.bigNumberify(amountBN)),
+                txParams
+            )
+            return result
 
         } catch (error) {
             throw error

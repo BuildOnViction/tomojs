@@ -754,6 +754,23 @@ function run() {
         })
 
     commander
+        .command('token-transfer')
+        .description('transfer token')
+        .requiredOption('-t, --tokenAddress <tokenAddress>', 'token address')
+        .requiredOption('-T, --to <to>', 'to')
+        .requiredOption('-a, --amount <amount>', 'amount')
+        .action(async (params) => {
+            await tomojs.tomoz.getTokenInformation({
+                tokenAddress: params.tokenAddress,
+                to: params.to,
+                amount: params.amount
+            })
+            .then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
+    commander
         .command('tx-receipt')
         .description('get tx recepit')
         .requiredOption('-H, --hash <hash>', 'tx hash')
