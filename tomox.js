@@ -607,8 +607,8 @@ class TomoX {
 
                 let signature = await this.wallet.signMessage(ethers.utils.arrayify(o.hash))
                 let { r, s, v } = ethers.utils.splitSignature(signature)
-                o.r = r
-                o.s = s
+                o.r = this.bigToHex(r)
+                o.s = this.bigToHex(s)
                 o.v = this.bigToHex(v)
 
                 const jsonrpc = {
@@ -644,7 +644,82 @@ class TomoX {
             }
         })
 
+    }
 
+    async getBids (baseToken, quoteToken) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_getBids',
+                    params: [ baseToken, quoteToken ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
+
+    async getAsks (baseToken, quoteToken) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_getAsks',
+                    params: [ baseToken, quoteToken ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
     }
 
 }
