@@ -311,7 +311,7 @@ function run() {
         .command('random-wallet')
         .description('generate a random wallet')
         .action(() => {
-            let wallet = tomojs.randomWallet()
+            let wallet = TomoJS.randomWallet()
             console.log(wallet)
         })
 
