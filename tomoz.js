@@ -454,7 +454,7 @@ class TomoZ {
         }
     }
 
-    async getTokenInformation({ tokenAddress }) {
+    async getTokenInformation(tokenAddress) {
         try {
             if (tokenAddress === '0x0000000000000000000000000000000000000001') {
                 return {

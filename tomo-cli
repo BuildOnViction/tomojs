@@ -745,9 +745,7 @@ function run() {
         .description('get token information')
         .requiredOption('-t, --tokenAddress <tokenAddress>', 'token address')
         .action(async (params) => {
-            await tomojs.tomoz.getTokenInformation({
-                tokenAddress: params.tokenAddress
-            })
+            await tomojs.tomoz.getTokenInformation(params.tokenAddress)
             .then(data => {
                 console.log(data)
             }).catch(e => console.log(e.message ? e.message : e))
