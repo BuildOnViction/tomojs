@@ -438,6 +438,29 @@ class TomoX {
         }
     }
 
+    async addCollateral ({
+        token, depositRate, liquidationRate, recallRate, nonce
+    }) {
+        try {
+            nonce = nonce || await this.provider.getTransactionCount(this.coinbase)
+            let txParams = {
+                value: 0,
+                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
+                chainId: this.chainId,
+                nonce
+            }
+
+            const result = await this.lendingContract.functions.addCollateral(
+                token, depositRate, liquidationRate, recallRate, txParams
+            )
+
+            return result
+        } catch (error) {
+            throw error
+        }
+    }
+
     async setCollateralPrice ({
         token, lendingToken, price, nonce
     }) {
@@ -668,6 +691,152 @@ class TomoX {
                 o.v = utils.bigToHex(v)
                 o.autoTopUp = true
 
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_sendLending',
+                    params: [ o ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+
+    }
+
+    async topupLendingTrade (order) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                let interest = new BigNumber(order.interest)
+                    .multipliedBy(10 ** 8)
+                let nonce = order.nonce || await this.getLendingOrderCount()
+                let o = {
+                    userAddress: this.coinbase,
+                    relayerAddress: order.relayerAddress,
+                    lendingToken: order.lendingToken,
+                    term: utils.bigToHex(order.term),
+                    type: 'TOPUP',
+                    status: 'NEW'
+                }
+
+                let tomoz = new TomoZ(this.network)
+           
+                o.collateralToken = order.collateralToken
+
+                let collateralToken = (o.side == 'BORROW') ? await tomoz.getTokenInformation(order.collateralToken) : true
+
+                if (!collateralToken) {
+                    return reject(Error('Can not get token info'))
+                }
+
+                o.quantity = utils.bigToHex(new BigNumber(order.quantity)
+                    .multipliedBy(10 ** collateralToken.decimals))
+
+                o.nonce = utils.bigToHex(nonce)
+                o.hash = utils.createLendingOrderHash(o)
+                let signature = await this.wallet.signMessage(ethers.utils.arrayify(o.hash))
+                let { r, s, v } = ethers.utils.splitSignature(signature)
+
+                o.r = utils.bigToHex(r)
+                o.s = utils.bigToHex(s)
+                o.v = utils.bigToHex(v)
+
+                console.log(o)
+
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_sendLending',
+                    params: [ o ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    console.log(error, body)
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+
+    }
+
+    async repayLendingTrade (order) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                let interest = new BigNumber(order.interest)
+                    .multipliedBy(10 ** 8)
+                let nonce = order.nonce || await this.getLendingOrderCount()
+                let o = {
+                    userAddress: this.coinbase,
+                    relayerAddress: order.relayerAddress,
+                    lendingToken: order.lendingToken,
+                    term: utils.bigToHex(order.term),
+                    type: 'REPAY',
+                    status: 'NEW'
+                }
+
+                let tomoz = new TomoZ(this.network)
+           
+                o.collateralToken = order.collateralToken
+
+                let collateralToken = (o.side == 'BORROW') ? await tomoz.getTokenInformation(order.collateralToken) : true
+
+                if (!collateralToken) {
+                    return reject(Error('Can not get token info'))
+                }
+
+                o.nonce = utils.bigToHex(nonce)
+                o.hash = utils.createLendingOrderHash(o)
+                let signature = await this.wallet.signMessage(ethers.utils.arrayify(o.hash))
+                let { r, s, v } = ethers.utils.splitSignature(signature)
+
+                o.r = utils.bigToHex(r)
+                o.s = utils.bigToHex(s)
+                o.v = utils.bigToHex(v)
+
                 console.log(o)
 
                 const jsonrpc = {
@@ -772,6 +941,163 @@ class TomoX {
                     if (response.statusCode !== 200 && response.statusCode !== 201) {
                         return reject(body)
                     }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
+
+    async getBorrows (lendingToken, term) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_getBorrows',
+                    params: [ lendingToken, term ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
+
+    async getInvests (lendingToken, term) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_getInvests',
+                    params: [ lendingToken, term ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
+
+    async getLendingTradeTree (lendingToken, term) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_getLendingTradeTree',
+                    params: [ lendingToken, term ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
+
+    async getLendingTradesByAddress (lendingToken, term, address) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_getLendingTradeTree',
+                    params: [ lendingToken, term ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    let trades = Object.values(body.result)
+                    let userTrades = trades.filter(t => {
+                        return (t.borrower.toLowerCase() === address.toLowerCase())
+                    })
 
                     return resolve(body.result)
 
