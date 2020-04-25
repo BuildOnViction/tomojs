@@ -740,8 +740,6 @@ class TomoX {
                     id: 1
                 }
 
-                console.log(o)
-
                 let url = urljoin(this.endpoint)
                 let options = {
                     method: 'POST',
@@ -810,8 +808,6 @@ class TomoX {
                 o.s = utils.bigToHex(s)
                 o.v = utils.bigToHex(v)
 
-                console.log(o)
-
                 const jsonrpc = {
                     jsonrpc: '2.0',
                     method: 'tomox_sendLending',
@@ -830,7 +826,6 @@ class TomoX {
                     body: jsonrpc
                 }
                 request(options, (error, response, body) => {
-                    console.log(error, body)
                     if (error) {
                         return reject(error)
                     }
@@ -884,8 +879,6 @@ class TomoX {
                 o.s = utils.bigToHex(s)
                 o.v = utils.bigToHex(v)
 
-                console.log(o)
-
                 const jsonrpc = {
                     jsonrpc: '2.0',
                     method: 'tomox_sendLending',
@@ -904,7 +897,6 @@ class TomoX {
                     body: jsonrpc
                 }
                 request(options, (error, response, body) => {
-                    console.log(error, body)
                     if (error) {
                         return reject(error)
                     }
@@ -996,6 +988,149 @@ class TomoX {
                 return reject(e)
             }
         })
+    }
+
+    async getBidTree (baseToken, quoteToken) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_getBidTree',
+                    params: [ baseToken, quoteToken ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
+
+    async getAskTree (baseToken, quoteToken) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_getAskTree',
+                    params: [ baseToken, quoteToken ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
+
+    async getOrderById (baseToken, quoteToken, orderId) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_getOrderById',
+                    params: [ baseToken, quoteToken, parseInt(orderId) ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
+
+    async getOrdersByAddress (baseToken, quoteToken, address = this.coinbase) {
+        let bids = await this.getBidTree(baseToken, quoteToken)
+        let asks = await this.getAskTree(baseToken, quoteToken)
+        bids = Object.values(bids)
+
+        let ret = []
+        for (let bid of bids) {
+            let ids = Object.keys(bid.Orders)
+            for (let id of ids) {
+                let order = await this.getOrderById(baseToken, quoteToken, id)
+                if (order.userAddress.toLowerCase() === address.toLowerCase()) {
+                    ret.push(order)
+                }
+            }
+        }
+
+        asks = Object.values(asks)
+        for (let ask of asks) {
+            let ids = Object.keys(ask.Orders)
+            for (let id of ids) {
+                let order = await this.getOrderById(baseToken, quoteToken, id)
+                if (order.userAddress.toLowerCase() === address.toLowerCase()) {
+                    ret.push(order)
+                }
+            }
+        }
+        return ret
     }
 
     async getBorrows (lendingToken, term) {
@@ -1112,7 +1247,7 @@ class TomoX {
         })
     }
 
-    async getLendingTradesByAddress (lendingToken, term, address) {
+    async getLendingTradesByAddress (lendingToken, term, address = this.coinbase) {
         return new Promise(async (resolve, reject) => {
 
             try {

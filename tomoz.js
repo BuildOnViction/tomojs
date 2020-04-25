@@ -413,7 +413,8 @@ class TomoZ {
             const balance = await contract.functions.balanceOf(userAddress || this.coinbase)
 
             return {
-                balance: (new BigNumber(balance).dividedBy(10 ** decimals)).toString(10)
+                balance: (new BigNumber(balance).dividedBy(10 ** decimals)).toString(10),
+                balanceBig: (new BigNumber(balance)).toString(10)
             }
 
         } catch (error) {
