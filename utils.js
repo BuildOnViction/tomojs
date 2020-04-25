@@ -1,6 +1,59 @@
 const BigNumber = require('bignumber.js')
 const ethers = require('ethers')
 
+const createRepayHash = (order) => {
+    return ethers.utils.solidityKeccak256(
+        [
+            'uint256',
+            'string',
+            'bytes',
+            'bytes',
+            'bytes',
+            'uint256',
+            'uint256',
+            'string'
+        ],
+        [
+            order.nonce,
+            order.status,
+            order.relayerAddress,
+            order.userAddress,
+            order.lendingToken,
+            order.term,
+            order.tradeId,
+            order.type
+        ],
+    )
+}
+
+const createTopupHash = (order) => {
+    return ethers.utils.solidityKeccak256(
+        [   
+            'uint256',
+            'string',
+            'bytes',
+            'bytes',
+            'bytes',
+            'uint256',
+            'uint256',
+            'uint256',
+            'string'
+        ],  
+        [   
+            order.nonce,
+            order.status,
+            order.relayerAddress,
+            order.userAddress,
+            order.lendingToken,
+            order.term,
+            order.tradeId,
+            order.quantity,
+            order.type
+        ],  
+    )       
+} 
+
+
 const createOrderHash = (order) => {
     if (order.type === 'MO') {
         return ethers.utils.solidityKeccak256(
@@ -173,6 +226,30 @@ const createLendingOrderHash = (order) =>{
     )
 }
 
+const createLendingCancelHash = (order) => {
+    return ethers.utils.solidityKeccak256(
+        [
+            'uint256',
+            'string',
+            'bytes',
+            'bytes',
+            'bytes',
+            'uint256',
+            'uint256',
+        ],
+        [
+            order.nonce,
+            order.status,
+            order.relayerAddress,
+            order.userAddress,
+            order.lendingToken,
+            order.term,
+            order.lendingId,
+        ],
+    )
+}
+
+
 const bigToHex = (b) => {
     return '0x' + (new BigNumber(b)).toString(16)
 }
@@ -180,6 +257,9 @@ const bigToHex = (b) => {
 module.exports = {
     bigToHex,
     createOrderHash,
-    createLendingOrderHash
+    createTopupHash,
+    createRepayHash,
+    createLendingOrderHash,
+    createLendingCancelHash
 }
 

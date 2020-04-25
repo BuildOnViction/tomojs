@@ -461,6 +461,29 @@ class TomoX {
         }
     }
 
+    async addLendingToken ({
+        token, nonce
+    }) {
+        try {
+            nonce = nonce || await this.provider.getTransactionCount(this.coinbase)
+            let txParams = {
+                value: 0,
+                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
+                chainId: this.chainId,
+                nonce
+            }
+
+            const result = await this.lendingContract.functions.addBaseToken(
+                token, txParams
+            )
+
+            return result
+        } catch (error) {
+            throw error
+        }
+    }
+
     async setCollateralPrice ({
         token, lendingToken, price, nonce
     }) {
@@ -490,8 +513,27 @@ class TomoX {
                 depositRate: new BigNumber(result[0]).toString(10),
                 liquidationRate: new BigNumber(result[1]).toString(10),
                 recallRate: new BigNumber(result[2]).toString(10),
-                price: new BigNumber(result[3]).toString(10),
-                blockNumber: new BigNumber(result[4]).toString(10)
+                prices: {}
+            }
+
+            let i = 0
+            let bases = []
+            try {
+                while (bases.length === i) {
+                        let base = await this.lendingContract.functions.BASES(i)
+                        if (base) {
+                            bases.push(base)
+                        }
+                        i++
+                }
+            } catch (e) { }
+
+            for (let addr of bases) {
+                const price = await this.lendingContract.functions.getCollateralPrice(address, addr)
+                ret.prices[addr] = {
+                    price: new BigNumber(price[0]).toString(10),
+                    blockNumber: new BigNumber(price[1]).toString(10)
+                }
             }
             return ret
         } catch (error) {
@@ -698,6 +740,8 @@ class TomoX {
                     id: 1
                 }
 
+                console.log(o)
+
                 let url = urljoin(this.endpoint)
                 let options = {
                     method: 'POST',
@@ -709,6 +753,7 @@ class TomoX {
                     body: jsonrpc
                 }
                 request(options, (error, response, body) => {
+                    console.log(error, body)
                     if (error) {
                         return reject(error)
                     }
@@ -738,6 +783,7 @@ class TomoX {
                     relayerAddress: order.relayerAddress,
                     lendingToken: order.lendingToken,
                     term: utils.bigToHex(order.term),
+                    tradeId: utils.bigToHex(order.tradeId),
                     type: 'TOPUP',
                     status: 'NEW'
                 }
@@ -746,7 +792,7 @@ class TomoX {
            
                 o.collateralToken = order.collateralToken
 
-                let collateralToken = (o.side == 'BORROW') ? await tomoz.getTokenInformation(order.collateralToken) : true
+                let collateralToken = await tomoz.getTokenInformation(order.collateralToken)
 
                 if (!collateralToken) {
                     return reject(Error('Can not get token info'))
@@ -756,7 +802,7 @@ class TomoX {
                     .multipliedBy(10 ** collateralToken.decimals))
 
                 o.nonce = utils.bigToHex(nonce)
-                o.hash = utils.createLendingOrderHash(o)
+                o.hash = utils.createTopupHash(o)
                 let signature = await this.wallet.signMessage(ethers.utils.arrayify(o.hash))
                 let { r, s, v } = ethers.utils.splitSignature(signature)
 
@@ -814,6 +860,7 @@ class TomoX {
                     relayerAddress: order.relayerAddress,
                     lendingToken: order.lendingToken,
                     term: utils.bigToHex(order.term),
+                    tradeId: utils.bigToHex(order.tradeId),
                     type: 'REPAY',
                     status: 'NEW'
                 }
@@ -822,14 +869,14 @@ class TomoX {
            
                 o.collateralToken = order.collateralToken
 
-                let collateralToken = (o.side == 'BORROW') ? await tomoz.getTokenInformation(order.collateralToken) : true
+                let collateralToken = await tomoz.getTokenInformation(order.collateralToken)
 
                 if (!collateralToken) {
                     return reject(Error('Can not get token info'))
                 }
 
                 o.nonce = utils.bigToHex(nonce)
-                o.hash = utils.createLendingOrderHash(o)
+                o.hash = utils.createRepayHash(o)
                 let signature = await this.wallet.signMessage(ethers.utils.arrayify(o.hash))
                 let { r, s, v } = ethers.utils.splitSignature(signature)
 
@@ -1099,7 +1146,7 @@ class TomoX {
                         return (t.borrower.toLowerCase() === address.toLowerCase())
                     })
 
-                    return resolve(body.result)
+                    return resolve(userTrades)
 
                 })
             } catch(e) {
