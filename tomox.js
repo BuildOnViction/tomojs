@@ -579,14 +579,14 @@ class TomoX {
         })
     }
 
-    async getLendingOrderCount (address) {
+    async getLendingOrderCount (address = this.coinbase) {
         return new Promise(async (resolve, reject) => {
 
             try {
                 const jsonrpc = {
                     jsonrpc: '2.0',
                     method: 'tomox_getLendingOrderCount',
-                    params: [ address || this.coinbase ],
+                    params: [ address ],
                     id: 1
                 }
 
@@ -690,6 +690,63 @@ class TomoX {
         })
     }
 
+    async cancelOrder (order) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                let nonce = order.nonce || await this.getOrderCount()
+                let o = {
+                    userAddress: this.coinbase,
+                    exchangeAddress: order.exchangeAddress,
+                    orderID: utils.bigToHex(order.orderId),
+                    orderHash: order.orderHash,
+                    baseToken: order.baseToken,
+                    quoteToken: order.quoteToken,
+                    status: 'CANCELLED'
+                }
+
+                o.nonce = utils.bigToHex(nonce)
+                o.hash = order.orderHash
+
+                let signature = await this.wallet.signMessage(ethers.utils.arrayify(utils.createOrderCancelHash(o)))
+                let { r, s, v } = ethers.utils.splitSignature(signature)
+                o.r = utils.bigToHex(r)
+                o.s = utils.bigToHex(s)
+                o.v = utils.bigToHex(v)
+
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_sendOrder',
+                    params: [ o ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
+
     async createLendingOrder (order) {
         return new Promise(async (resolve, reject) => {
 
@@ -751,7 +808,65 @@ class TomoX {
                     body: jsonrpc
                 }
                 request(options, (error, response, body) => {
-                    console.log(error, body)
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+
+    }
+
+    async cancelLendingOrder (order) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                let nonce = order.nonce || await this.getLendingOrderCount()
+                let o = {
+                    userAddress: this.coinbase,
+                    relayerAddress: order.relayerAddress,
+                    lendingToken: order.lendingToken,
+                    term: utils.bigToHex(order.term),
+                    interest: utils.bigToHex(order.interest),
+                    lendingId: utils.bigToHex(order.lendingId),
+                    status: 'CANCELLED'
+                }
+
+                o.nonce = utils.bigToHex(nonce)
+                o.hash = order.hash
+                let signature = await this.wallet.signMessage(ethers.utils.arrayify(utils.createLendingCancelHash(o)))
+                let { r, s, v } = ethers.utils.splitSignature(signature)
+
+                o.r = utils.bigToHex(r)
+                o.s = utils.bigToHex(s)
+                o.v = utils.bigToHex(v)
+
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_sendLending',
+                    params: [ o ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
                     if (error) {
                         return reject(error)
                     }
@@ -1107,25 +1222,25 @@ class TomoX {
     async getOrdersByAddress (baseToken, quoteToken, address = this.coinbase) {
         let bids = await this.getBidTree(baseToken, quoteToken)
         let asks = await this.getAskTree(baseToken, quoteToken)
-        bids = Object.values(bids)
+        bids = Object.values(bids || {})
 
         let ret = []
         for (let bid of bids) {
             let ids = Object.keys(bid.Orders)
             for (let id of ids) {
                 let order = await this.getOrderById(baseToken, quoteToken, id)
-                if (order.userAddress.toLowerCase() === address.toLowerCase()) {
+                if (((order || {}).userAddress || '').toLowerCase() === address.toLowerCase()) {
                     ret.push(order)
                 }
             }
         }
 
-        asks = Object.values(asks)
+        asks = Object.values(asks || {})
         for (let ask of asks) {
             let ids = Object.keys(ask.Orders)
             for (let id of ids) {
                 let order = await this.getOrderById(baseToken, quoteToken, id)
-                if (order.userAddress.toLowerCase() === address.toLowerCase()) {
+                if (((order || {}).userAddress || '').toLowerCase() === address.toLowerCase()) {
                     ret.push(order)
                 }
             }
@@ -1207,6 +1322,150 @@ class TomoX {
                 return reject(e)
             }
         })
+    }
+
+    async getBorrowTree (lendingToken, term) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_getBorrowingTree',
+                    params: [ lendingToken, term ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
+
+    async getInvestTree (lendingToken, term) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_getInvestingTree',
+                    params: [ lendingToken, term ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
+
+    async getLendingOrderById (lendingToken, term, orderId) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_getLendingOrderById',
+                    params: [ lendingToken, term, parseInt(orderId) ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
+
+    async getLendingOrdersByAddress (lendingToken, term, address = this.coinbase) {
+        let borrows = await this.getBorrowTree(lendingToken, term)
+        let invests = await this.getInvestTree(lendingToken, term)
+
+        borrows = Object.values(borrows || {})
+
+        let ret = []
+        for (let borrow of borrows) {
+            let ids = Object.keys(borrow.Orders)
+            for (let id of ids) {
+                let order = await this.getLendingOrderById(lendingToken, term, id)
+                if (((order || {}).userAddress || '').toLowerCase() === address.toLowerCase()) {
+                    ret.push(order)
+                }
+            }
+        }
+
+        invests = Object.values(invests || {})
+        for (let invest of invests) {
+            let ids = Object.keys(invest.Orders)
+            for (let id of ids) {
+                let order = await this.getLendingOrderById(lendingToken, term, id)
+                if (((order || {}).userAddress || '').toLowerCase() === address.toLowerCase()) {
+                    ret.push(order)
+                }
+            }
+        }
+        return ret
     }
 
     async getLendingTradeTree (lendingToken, term) {

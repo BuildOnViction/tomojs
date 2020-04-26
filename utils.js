@@ -249,6 +249,12 @@ const createLendingCancelHash = (order) => {
     )
 }
 
+const createOrderCancelHash = (oc) => {
+    return ethers.utils.solidityKeccak256(
+        ['bytes', 'uint256', 'bytes', 'uint256', 'string', 'bytes', 'bytes', 'bytes'],
+        [oc.orderHash, oc.nonce, oc.userAddress, oc.orderID, oc.status, oc.exchangeAddress, oc.baseToken, oc.quoteToken]
+    )
+}
 
 const bigToHex = (b) => {
     return '0x' + (new BigNumber(b)).toString(16)
@@ -260,6 +266,7 @@ module.exports = {
     createTopupHash,
     createRepayHash,
     createLendingOrderHash,
-    createLendingCancelHash
+    createLendingCancelHash,
+    createOrderCancelHash
 }
 
