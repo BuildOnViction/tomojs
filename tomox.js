@@ -1563,6 +1563,82 @@ class TomoX {
         })
     }
 
+    async getCurrentEpochPrice (baseToken, quoteToken) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_getCurrentEpochPrice',
+                    params: [ baseToken, quoteToken ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
+
+    async getLastEpochPrice (baseToken, quoteToken) {
+        return new Promise(async (resolve, reject) => {
+
+            try {
+                const jsonrpc = {
+                    jsonrpc: '2.0',
+                    method: 'tomox_getLastEpochPrice',
+                    params: [ baseToken, quoteToken ],
+                    id: 1
+                }
+
+                let url = urljoin(this.endpoint)
+                let options = {
+                    method: 'POST',
+                    url: url,
+                    json: true,
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: jsonrpc
+                }
+                request(options, (error, response, body) => {
+                    if (error) {
+                        return reject(error)
+                    }
+                    if (response.statusCode !== 200 && response.statusCode !== 201) {
+                        return reject(body)
+                    }
+
+                    return resolve(body.result)
+
+                })
+            } catch(e) {
+                return reject(e)
+            }
+        })
+    }
+
 }
 
 module.exports = TomoX
