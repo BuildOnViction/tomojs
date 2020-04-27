@@ -7,6 +7,7 @@ const WebSocket = require('ws')
 const TomoValidatorAbi = require('./abis/TomoValidator.json')
 const TomoX = require('./tomox')
 const TomoZ = require('./tomoz')
+const utils = require('./utils')
 
 const validatorAddress = '0x0000000000000000000000000000000000000088'
 
@@ -41,12 +42,14 @@ class TomoJS {
             this.wallet
         )
 
-        this.utils = ethers.utils
         network.endpoint = this.endpoint
         network.pkey = pkey
         network.chainId = chainId
         this.tomox = new TomoX(network)
         this.tomoz = new TomoZ(network)
+        this.tomo = this.provider
+        this.network = network
+        this.utils = Object.assign(ethers.utils, utils)
     }
 
     static setProvider(
@@ -284,18 +287,18 @@ class TomoJS {
                     return reject(e)
                 })
             }
-			return this.wallet.getTransactionCount().then(count => {
-				let tx = {
-					nonce: count,
-					gasLimit: 21000,
-					gasPrice: ethers.utils.bigNumberify('250000000'),
-					to: address,
-					value: ethers.utils.parseEther(value),
-					data: '0x',
-					chainId: this.chainId
-				}
+            return this.wallet.getTransactionCount().then(count => {
+                let tx = {
+                    nonce: count,
+                    gasLimit: 21000,
+                    gasPrice: ethers.utils.bigNumberify('250000000'),
+                    to: address,
+                    value: ethers.utils.parseEther(value),
+                    data: '0x',
+                    chainId: this.chainId
+                }
                 return this.wallet.sendTransaction(tx)
-			}).then(tx => {
+            }).then(tx => {
                 return resolve(tx)
             }).catch(e => {
                 return reject(e)

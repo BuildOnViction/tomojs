@@ -534,11 +534,11 @@ class TomoX {
             let bases = []
             try {
                 while (bases.length === i) {
-                        let base = await this.lendingContract.functions.BASES(i)
-                        if (base) {
-                            bases.push(base)
-                        }
-                        i++
+                    let base = await this.lendingContract.functions.BASES(i)
+                    if (base) {
+                        bases.push(base)
+                    }
+                    i++
                 }
             } catch (e) { }
 
