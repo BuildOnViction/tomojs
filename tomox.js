@@ -126,6 +126,20 @@ class TomoX {
         }
     }
 
+    async countRelayers () {
+        try {
+            let total = await this.contract.functions.RelayerCount()
+            let active = await this.contract.functions.ActiveRelayerCount()
+            let resigned = new BigNumber(total).minus(new BigNumber(active))
+            return {
+                active: new BigNumber(active).toString(10),
+                resigned: resigned.toString(10)
+            }
+        } catch (error) {
+            throw error
+        }
+    }
+
     async register ({
         amount,
         node,

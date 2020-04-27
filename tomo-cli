@@ -505,6 +505,15 @@ function run() {
             }).catch(e => console.log(e.message ? e.message : e))
         })
 
+    commander
+        .command('relayer-count')
+        .description('count relayers')
+        .action(async () => {
+            await tomojs.tomox.countRelayers().then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
     // TOMOX Lending commands
     commander
         .command('relayer-lending-update')
