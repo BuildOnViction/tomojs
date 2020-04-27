@@ -7,6 +7,7 @@ const WebSocket = require('ws')
 const TomoValidatorAbi = require('./abis/TomoValidator.json')
 const TomoX = require('./tomox')
 const TomoZ = require('./tomoz')
+const utils = require('./utils')
 
 const validatorAddress = '0x0000000000000000000000000000000000000088'
 
@@ -41,12 +42,14 @@ class TomoJS {
             this.wallet
         )
 
-        this.utils = ethers.utils
         network.endpoint = this.endpoint
         network.pkey = pkey
         network.chainId = chainId
         this.tomox = new TomoX(network)
         this.tomoz = new TomoZ(network)
+        this.tomo = this.provider
+        this.network = network
+        this.utils = {...ethers.utils, ...utils}
     }
 
     static setProvider(
