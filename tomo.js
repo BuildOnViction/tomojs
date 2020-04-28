@@ -58,7 +58,16 @@ class TomoJS {
         chainId = 88
     ) {
         return TomoJS.networkInformation(endpoint).then((info) => {
-            network = info
+            network = {
+                endpoint: endpoint,
+                pkey: pkey,
+                chainId: info.NetworkId,
+                issuerAddress: info.TomoZAddress,
+                tomoXAddress: info.TomoXListingAddress,
+                registrationAddress: info.RelayerRegistrationAddress,
+                lendingAddress: info.LendingAddress
+            }
+
             return new TomoJS(
                 endpoint, pkey, info.NetworkId
             )
