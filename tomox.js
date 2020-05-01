@@ -19,6 +19,7 @@ class TomoX {
         */
     constructor (network) {
         this.gasLimit = 4000000
+        this.gasPrice = 250000000000000
         this.network = network
         this.endpoint = network.endpoint
         this.chainId = network.chainId ? Number(network.chainId) : (this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89)
@@ -157,7 +158,7 @@ class TomoX {
             nonce = nonce || await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
                 value: ethers.utils.hexlify(ethers.utils.bigNumberify(amountBN)),
-                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasPrice: ethers.utils.hexlify(this.gasPrice),
                 gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
@@ -197,7 +198,7 @@ class TomoX {
             const tradeFeeBN = ethers.utils.hexlify(ethers.utils.bigNumberify(tradeFee))
             nonce = await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
-                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasPrice: ethers.utils.hexlify(this.gasPrice),
                 gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
@@ -226,7 +227,7 @@ class TomoX {
         try {
             const nonce = await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
-                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasPrice: ethers.utils.hexlify(this.gasPrice),
                 gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
@@ -251,7 +252,7 @@ class TomoX {
             const nonce = await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
                 value: ethers.utils.hexlify(ethers.utils.bigNumberify(amountBN)),
-                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasPrice: ethers.utils.hexlify(this.gasPrice),
                 gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
@@ -277,7 +278,7 @@ class TomoX {
         try {
             const nonce = await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
-                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasPrice: ethers.utils.hexlify(this.gasPrice),
                 gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
@@ -287,8 +288,8 @@ class TomoX {
                 throw new Error('New owner cannot be same address with the old owner')
             }
 
-            const checkNode = this.getRelayerByAddress(node)
-            const checkNewOwner = this.getRelayerByAddress(newOwner)
+            const checkNode = this.checkRelayerByAddress(node)
+            const checkNewOwner = this.checkRelayerByAddress(newOwner)
             if (!(await checkNode)) {
                 throw new Error('Cannot find node address')
             }
@@ -306,7 +307,7 @@ class TomoX {
         try {
             const nonce = await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
-                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasPrice: ethers.utils.hexlify(this.gasPrice),
                 gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
@@ -330,7 +331,7 @@ class TomoX {
             nonce = nonce || await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
                 value: 0,
-                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasPrice: ethers.utils.hexlify(this.gasPrice),
                 gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
@@ -363,7 +364,7 @@ class TomoX {
             const nonce = await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
                 value: 0,
-                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasPrice: ethers.utils.hexlify(this.gasPrice),
                 gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
@@ -403,7 +404,7 @@ class TomoX {
             nonce = nonce || await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
                 value: 0,
-                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasPrice: ethers.utils.hexlify(this.gasPrice),
                 gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
@@ -436,7 +437,7 @@ class TomoX {
             nonce = nonce || await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
                 value: 0,
-                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasPrice: ethers.utils.hexlify(this.gasPrice),
                 gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
@@ -459,7 +460,7 @@ class TomoX {
             nonce = nonce || await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
                 value: 0,
-                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasPrice: ethers.utils.hexlify(this.gasPrice),
                 gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
@@ -482,7 +483,7 @@ class TomoX {
             nonce = nonce || await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
                 value: 0,
-                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasPrice: ethers.utils.hexlify(this.gasPrice),
                 gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce
@@ -505,7 +506,7 @@ class TomoX {
             nonce = nonce || await this.provider.getTransactionCount(this.coinbase)
             let txParams = {
                 value: 0,
-                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasPrice: ethers.utils.hexlify(this.gasPrice),
                 gasLimit: ethers.utils.hexlify(this.gasLimit),
                 chainId: this.chainId,
                 nonce

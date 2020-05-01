@@ -461,7 +461,7 @@ function run() {
         })
 
     commander
-        .command('transfer-relayer')
+        .command('relayer-transfer')
         .description('transfer a relayer to new owner')
         .requiredOption('-n, --node <node>', 'Node address')
         .requiredOption('-o, --newOwner <newOwner>', 'New owner')
@@ -778,12 +778,11 @@ function run() {
         })
 
     commander
-        .command('tx-receipt')
+        .command('tx-receipt <hash>')
         .description('get tx recepit')
-        .requiredOption('-H, --hash <hash>', 'tx hash')
-        .action(async (params) => {
+        .action(async (hash) => {
             await tomojs.getTransactionReceipt({
-                hash: params.hash
+                hash: hash
             })
             .then(data => {
                 console.log(data)
