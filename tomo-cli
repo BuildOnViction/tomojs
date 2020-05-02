@@ -669,7 +669,7 @@ function run() {
 
     commander
         .command('issuer-tomox-tokens')
-        .description('get tokens that applied to tomoz')
+        .description('get tokens that applied to tomox')
         .action(async (params) => {
             await tomojs.tomoz.getTokensTomoX()
             .then(data => {
