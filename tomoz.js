@@ -483,6 +483,8 @@ class TomoZ {
                 symbol = await contract.functions.symbol()
             } catch (e) {}
 
+            const isAppliedTomoZ = await this.isAppliedTomoZ(tokenAddress)
+            const isAppliedTomoX = await this.isAppliedTomoX(tokenAddress)
             let totalSupply = await contract.functions.totalSupply()
             totalSupply = (new BigNumber(totalSupply).dividedBy(10 ** decimals)).toString(10)
 
@@ -490,7 +492,9 @@ class TomoZ {
                 name,
                 symbol,
                 decimals,
-                totalSupply
+                totalSupply,
+                isAppliedTomoZ,
+                isAppliedTomoX
             }
         } catch (error) {
             throw error
