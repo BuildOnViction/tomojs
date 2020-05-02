@@ -473,9 +473,16 @@ class TomoZ {
                 this.wallet
             )
 
-            const decimals = await contract.functions.decimals()
-            const name = await contract.functions.name()
-            const symbol = await contract.functions.symbol()
+            let decimals = 0
+            let name = ''
+            let symbol = ''
+
+            try {
+                decimals = await contract.functions.decimals()
+                name = await contract.functions.name()
+                symbol = await contract.functions.symbol()
+            } catch (e) {}
+
             let totalSupply = await contract.functions.totalSupply()
             totalSupply = (new BigNumber(totalSupply).dividedBy(10 ** decimals)).toString(10)
 

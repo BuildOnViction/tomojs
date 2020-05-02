@@ -750,11 +750,10 @@ function run() {
         })
 
     commander
-        .command('token-info')
+        .command('token-info <tokenAddress>')
         .description('get token information')
-        .requiredOption('-t, --tokenAddress <tokenAddress>', 'token address')
-        .action(async (params) => {
-            await tomojs.tomoz.getTokenInformation(params.tokenAddress)
+        .action(async (tokenAddress) => {
+            await tomojs.tomoz.getTokenInformation(tokenAddress)
             .then(data => {
                 console.log(data)
             }).catch(e => console.log(e.message ? e.message : e))
