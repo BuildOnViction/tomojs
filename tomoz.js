@@ -6,7 +6,6 @@ const WebSocket = require('ws')
 const path = require('path')
 const fs = require('fs')
 const solc = require('solc')
-const TomoJS = require('./validator')
 
 const IssuerAbi = require('./abis/TRC21Issuer.json')
 const TomoXListingAbi = require('./abis/TOMOXListing.json')
@@ -49,14 +48,14 @@ async function getABI (isMintable = true) {
     }
 }
 
-class IssuerJS {
-    constructor (
-        endpoint = 'http://localhost:8545',
-        pkey = '', // sample
-        chainId = 88,
-        issuerAddress = '0x0E2C88753131CE01c7551B726b28BFD04e44003F',
-        tomoXAddress = '0x14B2Bf043b9c31827A472CE4F94294fE9a6277e0'
-    ) {
+class TomoZ {
+    constructor ({
+        endpoint,
+        pkey,
+        chainId,
+        issuerAddress,
+        tomoXAddress,
+    }) {
         this.gasLimit = 2000000
         this.endpoint = endpoint
         this.chainId = chainId ? Number(chainId) : (this.endpoint === 'https://rpc.tomochain.com' ? 88 : 89)
@@ -75,38 +74,23 @@ class IssuerJS {
         this.coinbase = this.wallet.address
 
         this.issuerContract = new ethers.Contract(
-            issuerAddress,
+            issuerAddress || '0xc44ac3e7ea0f6471da752886209c76c4ebffd1fb',
             IssuerAbi.abi,
             this.wallet
         )
         this.tomoXContract = new ethers.Contract(
-            tomoXAddress,
+            tomoXAddress || '0x6cac761fe6c31e3ecab1121b00bfa708d72d85ce',
             TomoXListingAbi.abi,
             this.wallet
         )
-    }
-
-    static setProvider(
-        endpoint = 'http://localhost:8545',
-        pkey = '',
-        chainId = 88
-    ) {
-        return TomoJS.networkInformation(endpoint).then((info) => {
-            return new IssuerJS(
-                endpoint, pkey, info.NetworkId, info.TomoZAddress, info.TomoXListingAddress
-            )
-        }).catch((e) => {
-            return new IssuerJS(
-                endpoint, pkey, chainId
-            )
-        })
     }
 
     async issueTRC21 ({
         name,
         symbol,
         totalSupply,
-        decimals
+        decimals,
+        nonce
     }) {
         try {
             console.log('Creating contract...')
@@ -129,12 +113,12 @@ class IssuerJS {
                 trcContract.bytecode,
                 this.wallet
             )
-            const nonce = this.provider.getTransactionCount(this.coinbase)
+            nonce = nonce || await this.provider.getTransactionCount(this.coinbase)
             const txParams = {
                 gasLimit: ethers.utils.hexlify(this.gasLimit),
                 gasPrice: ethers.utils.hexlify(10000000000000),
                 chainId: this.chainId,
-                nonce: await nonce
+                nonce: nonce
             }
             const contract = await factory.deploy(
                 name,
@@ -307,7 +291,7 @@ class IssuerJS {
         }
     }
 
-    async applyTomoX ({ tokenAddress, amount }) {
+    async applyTomoX ({ tokenAddress, amount, nonce }) {
         try {
             if (amount < 1000) {
                 throw new Error('You need to pay 1000 TOMO as TomoX protocol listing fee')
@@ -318,14 +302,14 @@ class IssuerJS {
                 throw new Error('This token have already applied to TomoX')
             } else {
                 const depAmountBN = new BigNumber(amount).multipliedBy(10 ** 18).toString(10)
-                const nonce = this.provider.getTransactionCount(this.coinbase)
+                nonce = nonce || this.provider.getTransactionCount(this.coinbase)
                 const gasPrice = this.provider.getGasPrice()
                 const txParams = {
                     value: ethers.utils.hexlify(ethers.utils.bigNumberify(depAmountBN)),
                     gasLimit: ethers.utils.hexlify(this.gasLimit),
                     gasPrice: ethers.utils.hexlify(ethers.utils.bigNumberify(await gasPrice)),
                     chainId: this.chainId,
-                    nonce: await nonce
+                    nonce: nonce
                 }
 
                 const result = await this.tomoXContract.functions.apply(
@@ -426,10 +410,11 @@ class IssuerJS {
             )
 
             const decimals = await contract.functions.decimals()
-            const balance = await contract.functions.balanceOf(userAddress)
+            const balance = await contract.functions.balanceOf(userAddress || this.coinbase)
 
             return {
-                balance: (new BigNumber(balance).dividedBy(10 ** decimals)).toString(10)
+                balance: (new BigNumber(balance).dividedBy(10 ** decimals)).toString(10),
+                balanceBig: (new BigNumber(balance)).toString(10)
             }
 
         } catch (error) {
@@ -437,7 +422,7 @@ class IssuerJS {
         }
     }
 
-    async getTokenInformation({ tokenAddress }) {
+    async transfer({ tokenAddress, to, amount, nonce }) {
         try {
             const abi = getABI()
 
@@ -448,15 +433,68 @@ class IssuerJS {
             )
 
             const decimals = await contract.functions.decimals()
-            const name = await contract.functions.name()
-            const symbol = await contract.functions.symbol()
+            const amountBN = new BigNumber(amount).multipliedBy(10 ** decimals).toString(10)
+            nonce = nonce || await this.provider.getTransactionCount(this.coinbase)
+            let txParams = {
+                value: 0,
+                gasPrice: ethers.utils.hexlify(250000000000000),
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
+                chainId: this.chainId,
+                nonce
+            }
+
+            const result = await contract.functions.transfer(
+                to,
+                ethers.utils.hexlify(ethers.utils.bigNumberify(amountBN)),
+                txParams
+            )
+            return result
+
+        } catch (error) {
+            throw error
+        }
+    }
+
+    async getTokenInformation(tokenAddress) {
+        try {
+            if (tokenAddress === '0x0000000000000000000000000000000000000001') {
+                return {
+                    name: 'TomoChain',
+                    symbol: 'TOMO',
+                    decimals: 18,
+                    totalSupply: '100000000'
+                }
+            }
+            const abi = getABI()
+
+            const contract = new ethers.Contract(
+                tokenAddress,
+                await abi,
+                this.wallet
+            )
+
+            let decimals = 0
+            let name = ''
+            let symbol = ''
+
+            try {
+                decimals = await contract.functions.decimals()
+                name = await contract.functions.name()
+                symbol = await contract.functions.symbol()
+            } catch (e) {}
+
+            const isAppliedTomoZ = await this.isAppliedTomoZ(tokenAddress)
+            const isAppliedTomoX = await this.isAppliedTomoX(tokenAddress)
             let totalSupply = await contract.functions.totalSupply()
             totalSupply = (new BigNumber(totalSupply).dividedBy(10 ** decimals)).toString(10)
 
             return {
                 name,
                 symbol,
-                decimals
+                decimals,
+                totalSupply,
+                isAppliedTomoZ,
+                isAppliedTomoX
             }
         } catch (error) {
             throw error
@@ -464,4 +502,4 @@ class IssuerJS {
     }
 }
 
-module.exports = IssuerJS
+module.exports = TomoZ

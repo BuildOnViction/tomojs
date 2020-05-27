@@ -1,10 +1,3 @@
-const TomoJS = require('./validator')
-const RelayerJS = require('./registration')
-const IssuerJS = require('./issuer')
+const TomoJS = require('./tomo')
 
-
-module.exports = {
-    TomoJS,
-    RelayerJS,
-    IssuerJS
-}
+module.exports = TomoJS
