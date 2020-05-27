@@ -140,16 +140,19 @@ class TomoJS {
             const blks = await this.contract.functions.getWithdrawBlockNumbers()
 
             // remove duplicate
-            const blks2 = [...new Set(blks)]
+            const blks2 = [...new Set(blks.map(b => new BigNumber(b).toString(10)))]
             await Promise.all(blks2.map(async (block, index) => {
                 const cap = await this.contract.functions.getWithdrawCap(block)
-                result[index] = {
-                    index,
-                    blockNumber: block.toString(10),
-                    capacity: new BigNumber(cap).div(10 ** 18).toString(10)
+                const capacity = new BigNumber(cap).div(10 ** 18).toString(10)
+                if (capacity !== '0') {
+                    result.push({
+                        index,
+                        blockNumber: block.toString(10),
+                        capacity
+                    })
                 }
             }))
-            return result
+            return result.sort((a, b) => a.index - b.index)
         } catch (error) {
             throw error
         }
