@@ -275,6 +275,18 @@ class TomoJS {
         return ethers.utils.formatEther(balance)
     }
 
+    async getTokenBalance ( tokenAddress, address = this.coinbase) {
+        if (tokenAddress === "0x0000000000000000000000000000000000000001") {
+            let balance = await this.provider.getBalance(address)
+            return ethers.utils.formatEther(balance)
+        }
+        let balance = await this.tomoz.balanceOf({
+            tokenAddress: tokenAddress,
+            userAddress: address
+        })
+        return balance.balance
+    }
+
     getCandidateStatus({ address, epoch }) {
         return new Promise(async (resolve, reject) => {
 
