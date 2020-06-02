@@ -275,7 +275,7 @@ function run() {
     commander
         .command('get-balance')
         .description('get user balance')
-        .option('-a, --address <address>', 'User Address')
+        .option('-a, --address <address>', 'user address')
         .action(async (params) => {
             await tomojs.getBalance(params.address)
             .then(data => {
@@ -286,7 +286,7 @@ function run() {
     commander
         .command('get-candidate-status')
         .description('get candidate status')
-        .option('-a, --address <address>', 'Candidate Coinbase')
+        .option('-a, --address <address>', 'candidate coinbase')
         .option('-e, --epoch <epoch>', 'Epoch Number')
         .action(async (params) => {
             await tomojs.getCandidateStatus(params)
@@ -309,10 +309,14 @@ function run() {
 
     commander
         .command('random-wallet')
+        .option('-n, --number <number>', 'number of wallet')
         .description('generate a random wallet')
-        .action(() => {
-            let wallet = TomoJS.randomWallet()
-            console.log(wallet)
+        .action((params) => {
+            let number = parseInt(params.number || 1)
+            for (let i = 0; i < number; i++) {
+                let wallet = TomoJS.randomWallet()
+                console.log(`Address: ${wallet.address}\nPrivate Key: ${wallet.privateKey}`)
+            }
         })
 
     // TOMOX commands
