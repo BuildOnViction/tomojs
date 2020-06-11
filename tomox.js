@@ -499,6 +499,29 @@ class TomoX {
         }
     }
 
+    async addTerm ({
+        term, nonce
+    }) {
+        try {
+            nonce = nonce || await this.provider.getTransactionCount(this.coinbase)
+            let txParams = {
+                value: 0,
+                gasPrice: ethers.utils.hexlify(this.gasPrice),
+                gasLimit: ethers.utils.hexlify(this.gasLimit),
+                chainId: this.chainId,
+                nonce
+            }
+
+            const result = await this.lendingContract.functions.addTerm(
+                term, txParams
+            )
+
+            return result
+        } catch (error) {
+            throw error
+        }
+    }
+
     async setCollateralPrice ({
         token, lendingToken, price, nonce
     }) {
