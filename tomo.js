@@ -334,7 +334,7 @@ class TomoJS {
                 gasLimit: 21000,
                 gasPrice: ethers.utils.bigNumberify('250000000'),
                 to: address,
-                value: ethers.utils.parseEther(value),
+                value: ethers.utils.parseEther(String(value)),
                 data: '0x',
                 chainId: this.chainId
             }
@@ -351,7 +351,7 @@ class TomoJS {
                     gasLimit: 21000,
                     gasPrice: ethers.utils.bigNumberify('250000000'),
                     to: address,
-                    value: ethers.utils.parseEther(value),
+                    value: ethers.utils.parseEther(String(value)),
                     data: '0x',
                     chainId: this.chainId
                 }
