@@ -197,9 +197,7 @@ class TomoJS {
             const result = []
             const blks = await this.contract.functions.getWithdrawBlockNumbers()
 
-            // remove duplicate
-            const blks2 = [...new Set(blks.map(b => new BigNumber(b).toString(10)))]
-            await Promise.all(blks2.map(async (block, index) => {
+            await Promise.all(blks.map(async (block, index) => {
                 const cap = await this.contract.functions.getWithdrawCap(block)
                 const capacity = new BigNumber(cap).div(10 ** 18).toString(10)
                 if (capacity !== '0') {
@@ -241,9 +239,7 @@ class TomoJS {
             const currentBlock = await this.provider.getBlockNumber() || 0
             const blks = await this.contract.functions.getWithdrawBlockNumbers()
 
-            // remove duplicate
-            const blks2 = [...new Set(blks)]
-            await Promise.all(blks2.map(async (block, index) => {
+            await Promise.all(blks.map(async (block, index) => {
                 if (new BigNumber(block).isLessThan(currentBlock)) {
                     result.push({
                         index,
