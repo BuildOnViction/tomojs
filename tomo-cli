@@ -792,5 +792,30 @@ function run() {
             }).catch(e => console.log(e.message ? e.message : e))
         })
 
+    // Bridge
+    commander
+        .command('bridge-issue')
+        .description('issue wrap token')
+        .requiredOption('-n, --tokenName <tokenName>', 'Token name')
+        .requiredOption('-s, --tokenSymbol <tokenSymbol>', 'Token symbol')
+        .requiredOption('-d, --decimals <decimals>', 'Decimals')
+        .option('-t, --totalSupply <totalSupply>', 'Total supply', 0)
+        .option('-f, --minFee <minFee>', 'Tx Fee', 0)
+        .option('-D, --depositFee <depositFee>', 'Deposit Fee', 0)
+        .option('-w, --withdrawFee <withdrawFee>', 'Withdraw Fee', 0)
+        .action(async (params) => {
+            await tomojs.bridge.issueWrapToken({
+                name: params.tokenName,
+                symbol: params.tokenSymbol,
+                totalSupply: params.totalSupply,
+                decimals: params.decimals,
+                minFee: params.minFee,
+                withdrawFee: params.withdrawFee,
+                depositFee: params.depositFee
+            }).then(data => {
+                console.log(data)
+            }).catch(e => console.log(e.message ? e.message : e))
+        })
+
     commander.parse(process.argv)
 }
