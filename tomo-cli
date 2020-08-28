@@ -742,7 +742,7 @@ function run() {
         .command('token-balance-of')
         .description('get token balance')
         .requiredOption('-t, --tokenAddress <tokenAddress>', 'token address')
-        .requiredOption('-u, --userAddress <userAddress>', 'user address')
+        .option('-u, --userAddress <userAddress>', 'user address')
         .action(async (params) => {
             await tomojs.tomoz.balanceOf({
                 tokenAddress: params.tokenAddress,
@@ -770,7 +770,7 @@ function run() {
         .requiredOption('-T, --to <to>', 'to')
         .requiredOption('-a, --amount <amount>', 'amount')
         .action(async (params) => {
-            await tomojs.tomoz.getTokenInformation({
+            await tomojs.tomoz.transfer({
                 tokenAddress: params.tokenAddress,
                 to: params.to,
                 amount: params.amount
